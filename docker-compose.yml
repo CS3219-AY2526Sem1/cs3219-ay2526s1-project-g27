@@ -1,0 +1,44 @@
+services:
+  # The Backend Authentication Service
+  auth-service:
+    build:
+      context: ./auth-service  # Path to the backend's build context
+      dockerfile: Dockerfile.dev
+    container_name: auth-service-dev
+    ports:
+      - "3000:3000" # Expose to host machine for direct API testing
+    volumes:
+      - ./auth-service:/app
+      - /app/node_modules
+    env_file:
+      - ./auth-service/.env 
+    depends_on:
+      - mongo
+
+  # The Frontend React App
+  react-app:
+    build:
+      context: ./frontend      
+      dockerfile: Dockerfile.dev
+    container_name: react-app-dev
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - auth-service 
+
+  # The Database
+  mongo:
+    image: mongo:7
+    container_name: mongo-auth-dev
+    ports:
+      - "27017:27017" # Expose to host machine for database tools
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

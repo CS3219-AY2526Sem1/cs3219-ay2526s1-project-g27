@@ -1,0 +1,29 @@
+services:
+  auth-service:
+    build:
+      context: .
+      target: prod
+    container_name: auth-service-prod
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - app-net
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:7
+    container_name: mongo-auth-prod
+    restart: always
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  mongo-data:
