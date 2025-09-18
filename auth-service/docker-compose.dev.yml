@@ -2,7 +2,7 @@ services:
   auth-service:
     build:
       context: .
-      target: dev
+      dockerfile: Dockerfile.dev
     container_name: auth-service-dev
     ports:
       - "3000:3000"
