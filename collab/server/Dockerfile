@@ -1,25 +1,10 @@
-# AI Assistance Disclosure:
-# Tool: ChatGPT (model: GPT‑5) date: 2025‑09‑12
-# Scope: 
-# - Generated template Dockerfile
-# Author review: 
-# - Verfied for correctness by running code
+FROM node:22-alpine
 
-# Use official Node.js LTS base image
-FROM node:20-alpine
-
-# Set working directory
-WORKDIR /app
-
-# Copy package files and install dependencies
+RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
+WORKDIR /home/node/app
 COPY package*.json ./
+USER node
 RUN npm install
-
-# Copy the server code
-COPY . .
-
-# Expose the port used by the WebSocket server
+COPY --chown=node:node . .
 EXPOSE 1234
-
-# Start the server
-CMD ["node", "server.js"]
+CMD [ "npm", "start" ]

@@ -12,7 +12,6 @@ Template code for
 - `client/package.json`
 - `client/src/editor.tsx`
 - `client/src/App.tsx`
-- `server/server.js`
 
 Additionally, it also generated instructions for project setup
 
@@ -88,3 +87,22 @@ Additionally, it also generated instructions for running docker-compose
 Verified by running the code
 
 
+## Date/Time:
+2025-09-13 18:11
+## Tool:
+ChatGPT
+## Prompt/Command:
+setup a simple websocket server with YJS as a CRDT to simply receive and emit changes to clients
+
+## Output Summary:
+Template code for 
+- `server/server.js`
+
+Additionally, it also generated instructions for project setup
+
+## Action Taken:
+- [X] Accepted as-is
+- [ ] Modified
+- [ ] Rejected
+## Author Notes:
+- Verified by testing code
