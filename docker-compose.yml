@@ -2,7 +2,7 @@ services:
   # The Backend Authentication Service
   auth-service:
     build:
-      context: ./auth-service  # Path to the backend's build context
+      context: ./auth-service # Path to the backend's build context
       dockerfile: Dockerfile.dev
     container_name: auth-service-dev
     ports:
@@ -11,25 +11,39 @@ services:
       - ./auth-service:/app
       - /app/node_modules
     env_file:
-      - ./auth-service/.env 
+      - ./auth-service/.env
     depends_on:
       - mongo
 
   # The Frontend React App
   react-app:
     build:
-      context: ./frontend      
+      context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: react-app-dev
     ports:
-      - '5173:5173'
+      - "5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
     depends_on:
-      - auth-service 
+      - auth-service
+
+  # The Question Service
+  question-service:
+    build:
+      context: ./question-service
+      dockerfile: dockerfile
+    container_name: question-service-dev
+    ports:
+      - "3013:3013"
+    volumes:
+      - ./question-service:/app
+      - /app/node_modules
+    depends_on:
+      - mongo
 
   # The Database
   mongo:
