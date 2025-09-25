@@ -5,6 +5,7 @@ import NotFound from '@/pages/NotFound';
 // Lazily import all your pages
 const Home = lazy(() => import('@/pages/Home'));
 const Login = lazy(() => import('@/pages/auth/Login'));
+const Register = lazy(() => import('@/pages/auth/SignUp'));
 // const Dashboard = lazy(() => import('@/pages/Dashboard'));
 // const NotFound = lazy(() => import('@/pages/NotFound'));
 // Add other pages as you create them
@@ -22,7 +23,7 @@ const AppRouter: FC = () => {
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        {/* <Route path="/register" element={<Register />} /> */}
+        <Route path="/signup" element={<Register />} />
         {/* <Route path="/features" element={<Features />} /> */}
 
         {/* Protected Routes
