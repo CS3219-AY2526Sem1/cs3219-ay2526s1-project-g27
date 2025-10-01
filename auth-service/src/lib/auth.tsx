@@ -44,11 +44,31 @@ export const auth = betterAuth({
       });
     }
   },
-  socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID as string,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,}
+  user: {
+    additionalFields: {
+      handle: {
+        type: "string",
+        required: false,
+        input: true 
+      },
+      currentRating: {
+        type: "number",
+        required: true,
+        defaultValue: 1000, 
+        input: false
+      },
+      rank: {
+        type: "string",
+        required: false,
+        input: false
+      }
+    }
   },
+  // socialProviders: {
+  //   github: {
+  //     clientId: process.env.GITHUB_CLIENT_ID as string,
+  //     clientSecret: process.env.GITHUB_CLIENT_SECRET as string,}
+  // },
   database: mongodbAdapter(db, {}),
 });
 

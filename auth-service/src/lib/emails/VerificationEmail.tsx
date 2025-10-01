@@ -78,7 +78,7 @@ const VerificationEmail: React.FC<VerificationEmailProps> = ({
 };
 
 export const PreviewProps = {
-  userName: "Alan Turing",
+  userName: "John Doe",
   verificationUrl: "https://example.com/verify?token=abc123",
 };
 

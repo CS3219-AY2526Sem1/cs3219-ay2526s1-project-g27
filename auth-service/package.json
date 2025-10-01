@@ -16,7 +16,8 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "mongoose": "^8.18.1",
-    "resend": "^6.1.0"
+    "resend": "^6.1.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@react-email/components": "^0.5.5",
