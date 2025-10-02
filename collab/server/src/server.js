@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 
+// Env variables required:
+// - HOST
+// - PORT
+
+
 import WebSocket from 'ws'
 import http from 'http'
 import * as number from 'lib0/number'

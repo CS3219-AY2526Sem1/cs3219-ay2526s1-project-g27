@@ -1,3 +1,7 @@
+// Env variables required:
+// - CALLBACK_URL: url to write to
+// - CALLBACK_OBJECTS: 
+
 import http from 'http'
 import * as number from 'lib0/number'
 
