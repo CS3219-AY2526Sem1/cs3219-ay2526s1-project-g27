@@ -12,7 +12,7 @@ services:
       context: ./server
     container_name: yjs-server
     ports:
-      - "1234:1234"  # Expose Yjs WebSocket server
+      - "8081:8081"  # Expose Yjs WebSocket server
     restart: unless-stopped
 
   client:
@@ -24,3 +24,15 @@ services:
     depends_on:
       - server
     restart: unless-stopped
+  
+  persistence:
+    image: mongo:7
+    container_name: mongo-auth-dev
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
+
