@@ -5,6 +5,13 @@ Scope:
 - Generated template code
 Author review: 
 - Verfied for correctness by reading code
+
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5) date: 2025‑10‑04
+Scope: 
+- Generated code to send a request for different rooms
+Author review: 
+- Verfied for correctness by running code
 */
 
 import * as Y from 'yjs';
@@ -33,7 +40,11 @@ export const USERCOLOURS = [
 
 export const userColour = USERCOLOURS[random.uint32() % USERCOLOURS.length]
 
-export const CollaborativeEditor:React.FC = ()  => {
+interface CollaborativeEditorProps {
+  roomID: string;
+}
+
+export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({roomID})  => {
   const editorRef = useRef<HTMLDivElement>(null);
   const ydocRef = useRef<Y.Doc>(null);
   const providerRef = useRef<WebsocketProvider>(null);
@@ -41,7 +52,7 @@ export const CollaborativeEditor:React.FC = ()  => {
 
   useEffect(() => {
     const ydoc = new Y.Doc();
-    const provider = new WebsocketProvider(WEBSOCKET_ENDPOINT, 'my-room-id', ydoc);
+    const provider = new WebsocketProvider(WEBSOCKET_ENDPOINT, roomID, ydoc);
     provider.awareness.setLocalStateField('user', {
       name: 'Anonymous ' + Math.floor(Math.random() * 100),
       color: userColour.color,
@@ -70,7 +81,7 @@ export const CollaborativeEditor:React.FC = ()  => {
       ydoc.destroy();
       view.destroy();
     };
-  }, []);
+  }, [roomID]);
 
   return <div ref={editorRef} style={{ border: '1px solid #ccc', height: '400px' }} />;
 };
