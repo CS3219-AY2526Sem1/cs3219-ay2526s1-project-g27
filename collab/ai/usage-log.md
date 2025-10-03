@@ -106,3 +106,44 @@ Additionally, it also generated instructions for project setup
 - [ ] Rejected
 ## Author Notes:
 - Verified by testing code
+
+
+## Date/Time:
+2025-10-2 23:11
+## Tool:
+ChatGPT
+## Prompt/Command:
+\<Copy and pasted ./server/utils.js code here\>
+Create a persistence adapter for mongodb
+
+## Output Summary:
+Code for 
+- `server/persistence.js`
+
+## Action Taken:
+- [X] Accepted as-is
+- [ ] Modified
+- [ ] Rejected
+## Author Notes:
+- Verified by testing code
+
+## Date/Time:
+2025-10-2 23:11
+## Tool:
+ChatGPT
+## Prompt/Command:
+/** setupWSConnection 
+ \* conn, req, \{ docName = (req.url || '').slice(1).split('?')\[0], gc = true
+ */
+wss.on('connection', setupWSConnection(conn, req))
+print the number of connections when client connects/disconnect
+
+## Output Summary:
+Expanded the above callback to include logging
+
+## Action Taken:
+- [X] Accepted as-is
+- [ ] Modified
+- [ ] Rejected
+## Author Notes:
+- Verified by testing code

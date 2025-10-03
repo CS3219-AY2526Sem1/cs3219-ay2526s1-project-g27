@@ -5,10 +5,8 @@ Scope:
 - Generated initial code
 Author review: 
 - Verfied for correctness by reading code
-- Added encapsulation for use in main server code
 */
 
-// mongo-persistence.js
 import { MongoClient } from 'mongodb'
 import * as Y from 'yjs'
 
