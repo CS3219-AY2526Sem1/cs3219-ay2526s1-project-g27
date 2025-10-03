@@ -18,7 +18,7 @@ import { defaultKeymap } from '@codemirror/commands';
 import * as random from 'lib0/random';
 
 
-const WEBSOCKET_ENDPOINT = 'ws://server:8081';
+const WEBSOCKET_ENDPOINT = 'ws://localhost:8081';
 
 export const USERCOLOURS = [
   { color: '#30bced', light: '#30bced33' },
