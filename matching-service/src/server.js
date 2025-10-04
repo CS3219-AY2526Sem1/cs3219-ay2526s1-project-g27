@@ -3,6 +3,7 @@ const { Queue, Worker, QueueEvents } = require("bullmq");
 const { createBullBoard } = require("@bull-board/api");
 const { BullMQAdapter } = require("@bull-board/api/bullMQAdapter");
 const { ExpressAdapter } = require("@bull-board/express");
+const IORedis = require('ioredis');
 
 require("dotenv").config();
 
@@ -13,6 +14,24 @@ app.use(express.json());
 const redisOptions = {
     connection: { host: process.env.REDIS_HOST, port: process.env.REDIS_PORT, maxRetriesPerRequest: null },
 };
+
+const tentativeMatchCache = new IORedis(redisOptions.connection); 
+tentativeMatchCache.on('ready', async () => {
+    // try to use redis to check functionality
+    console.log("Client connected and ready! Trying to use cache...");
+    await tentativeMatchCache.set("foo", "bar");
+    console.log('Usage of cache successful!');
+    const result = await tentativeMatchCache.get("foo");
+    console.log("Cache result:", result); // >>> bar
+    await tentativeMatchCache.del("foo");
+
+    // check that redis always restart with no data
+    const keys = await tentativeMatchCache.keys("*");
+    for (const key of keys) {
+        console.log("Key inside cache", key);
+    }
+});
+tentativeMatchCache.on("error", err => console.log("Redis Client Error", err));
 
 const matchingQueue = new Queue("matching-queue", redisOptions);
 
@@ -42,14 +61,17 @@ app.listen(3001, () => console.log("Server running on http://localhost:3001"));
 class SSEClientConnection {
     res;
     jobId;
+    timestamp;
 
     /**
      * @param {import("http").ServerResponse} responseStream - The HTTP response stream.
      * @param {string | null} initialJobId - The job ID of the user in the queue.
+     * @param {number} timestamp - The time at which the user joins the queue.
      */
-    constructor(responseStream, initialJobId = null) {
+    constructor(responseStream, timestamp, initialJobId = null) {
         this.res = responseStream;
         this.jobId = initialJobId;
+        this.timestamp = timestamp;
     }
 
     // sends data as a standard SSE event
@@ -71,6 +93,10 @@ class SSEClientConnection {
 
     updateJobId(jobId) {
         this.jobId = jobId;
+    }
+
+    getTimestamp() {
+        return this.timestamp;
     }
 }
 
@@ -124,7 +150,7 @@ app.get("/queue-events/:userId", (req, res) => {
     res.flushHeaders();
 
     // save the response object so we can push events later
-    SSEClientConnections.set(userId, new SSEClientConnection(res));
+    SSEClientConnections.set(userId, new SSEClientConnection(res, Date.now()));
 
     // clean up on disconnect
     req.on("close", async() => {
@@ -146,6 +172,131 @@ app.get("/queue-events/:userId", (req, res) => {
         console.log("Deleted SSE client connection");
     });
 });
+
+const checkMatchTimeout = async(matchId) => {
+    const allFields = await tentativeMatchCache.hgetall(matchId);
+    for (const field in allFields) {
+        if (field.startsWith("accepted:")) {
+            const userId = field.split(":")[1];
+            const SSEClientConnection = SSEClientConnections.get(userId);
+            if (SSEClientConnection) {
+                if (allFields[field] === "false") {
+                    SSEClientConnection.send("matchFailed", { message: "Did not accept match within time limit, please try again!" });
+                    SSEClientConnection.close();
+                } else {
+                    const job = await matchingQueue.add("add-user",
+                        {
+                            userId: userId,
+                            topic: allFields["topic"],
+                            difficulty: allFields["difficulty"],
+                            isMatched: false
+                        },
+                        // for reattempting to match users
+                        {
+                            attempts: 6,
+                            backoff: {
+                                type: "fixed",
+                                delay: 10000,
+                            }, 
+                            timestamp: SSEClientConnection.getTimestamp()
+                        }
+                    );
+                    SSEClientConnection.send("userAdded", { message: "Successfully added to queue!" });
+                    SSEClientConnection.updateJobId(job.id);
+                }
+            } 
+        }
+    }
+    await tentativeMatchCache.del(matchId);
+}
+
+const handleTentativeMatch = async(jobData) => {
+    const userA = jobData.userId;
+    const userB = jobData.matchedUserId;
+    const matchId = jobData.matchId;
+
+    const match = await tentativeMatchCache.exists(matchId);
+    console.log('Match found or not', match, matchId);
+
+    if (match < 1) {
+        const hashFields = [
+            "userIds", `${userA},${userB}`, 
+            `accepted:${userA}`, "false",
+            `accepted:${userB}`, "false",
+            "topic", `${jobData.topic}`,
+            "difficulty", `${jobData.difficulty}`
+        ];
+        console.log('Adding match to cache');
+        await tentativeMatchCache.hset(matchId, ...hashFields);
+        console.log('Added match to cache successfully');
+        const matchData = await tentativeMatchCache.hgetall(matchId);
+
+        const SSEClientAConnection = SSEClientConnections.get(userA);
+        const SSEClientBConnection = SSEClientConnections.get(userB);
+        if (SSEClientAConnection) {
+            SSEClientAConnection.send("matchFound", { message: "Successfully found a match, please accept!", matchId, matchData });
+        }
+        if (SSEClientBConnection) {
+            SSEClientBConnection.send("matchFound", { message: "Successfully found a match, please accept!", matchId, matchData });
+        }
+
+        setTimeout(async() => await checkMatchTimeout(matchId), 15000);
+    }
+}
+
+const finalizeMatch = async(matchId, data) => {
+    const SSEClientAConnection = SSEClientConnections.get(data.userA);
+    const SSEClientBConnection = SSEClientConnections.get(data.userB);
+    if (SSEClientAConnection) {
+        SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", data });
+        SSEClientAConnection.close();
+    }
+    if (SSEClientBConnection) {
+        SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", data });
+        SSEClientBConnection.close();
+    }
+    await tentativeMatchCache.del(matchId);
+}
+
+const acceptTentativeMatch = async(req, res) => {
+    const { userId, matchId } = req.body;
+    const isMatchExpired = await tentativeMatchCache.exists(matchId) < 1 ? true : false;
+    
+    if (isMatchExpired) {
+        return res.status(400).json({ error: "Match expired." });
+    }
+
+    const SSEClientConnection = SSEClientConnections.get(userId);
+    if (SSEClientConnection) {
+        SSEClientConnection.send("matchAccepted", { message: "Match successfully accepted!" });
+    }
+    await tentativeMatchCache.hset(matchId, `accepted:${userId}`, "true");
+    
+    const allFields = await tentativeMatchCache.hgetall(matchId);
+    let matchAccepted = true;
+    for (const field in allFields) {
+        if (field.startsWith("accepted:")) {
+            matchAccepted = allFields[field] === "true" ? true && matchAccepted : false;
+        }
+    }
+
+    if (matchAccepted) {
+        const users = allFields["userIds"];
+        const userA = users.split(",")[0];
+        const userB = users.split(",")[1];
+        // data to be sent back to client
+        const data = {
+            userA: userA,
+            userB: userB,
+        }
+        await finalizeMatch(matchId, data);
+        return res.status(200).json({ message: "Redirecting to collaboration space..." });
+    } else {
+        return res.status(200).json({ message: "Waiting for other user to accept..." });
+    }
+}
+
+app.post("/matches", acceptTentativeMatch);
 
 /*
 Matching Algorithm
@@ -173,7 +324,8 @@ const processJob = async(jobInProcess) => {
         });
         console.log(`Compatible Job ${compatibleJob.id} with Job In Queue ${jobInProcess.id}.`);
         const newJob = await matchingQueue.add("add-user",
-            {
+            {   
+                matchId: `${compatibleJob.data.userId}-${jobInProcess.data.userId}`,
                 userId: compatibleJob.data.userId,
                 topic: compatibleJob.data.topic,
                 difficulty: compatibleJob.data.difficulty,
@@ -189,6 +341,7 @@ const processJob = async(jobInProcess) => {
             console.log("Updated jobID");
         }
         await jobInProcess.updateData({
+            matchId: `${compatibleJob.data.userId}-${jobInProcess.data.userId}`,
             userId: jobInProcess.data.userId,
             topic: jobInProcess.data.topic,
             difficulty: jobInProcess.data.difficulty,
@@ -228,10 +381,7 @@ matchingQueueEvents.on("completed", async ({ jobId }) => {
 
     if (job) {
         console.log(`Job ${job.id} completed.`, job.data);
-        const SSEClientConnection = SSEClientConnections.get(job.data.userId);
-        if (SSEClientConnection) {
-            SSEClientConnection.send("matchFound", { message: "Successfully found a match, please accept!" });
-        }
+        await handleTentativeMatch(job.data);
     } else {
         console.log(`Job with ID ${jobId} not found.`);
     }
