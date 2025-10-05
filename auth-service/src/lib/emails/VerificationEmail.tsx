@@ -1,3 +1,4 @@
+// src/emails/VerificationEmail.tsx
 import * as React from 'react';
 import {
   Body,
@@ -17,10 +18,11 @@ interface VerificationEmailProps {
   verificationUrl: string;
 }
 
-const VerificationEmail: React.FC<VerificationEmailProps> = ({
+// Change to a regular function that returns JSX
+export default function VerificationEmail({
   userName,
   verificationUrl,
-}) => {
+}: VerificationEmailProps) {
   return (
     <Html lang="en" dir="ltr">
       <Head />
@@ -33,7 +35,6 @@ const VerificationEmail: React.FC<VerificationEmailProps> = ({
                 Verify Your Email Address
               </Heading>
               
-              {/* 3. Personalize the greeting with the user's name */}
               <Text className="text-[16px] text-gray-700 mb-[16px]">
                 Hi {userName},
               </Text>
@@ -62,7 +63,6 @@ const VerificationEmail: React.FC<VerificationEmailProps> = ({
             </Section>
             
             <Section className="border-t border-solid border-gray-200 pt-[24px]">
-              {/* 4. Replace placeholder information with your actual details */}
               <Text className="text-[12px] text-gray-500 text-center m-0">
                 © 2025 Acme Inc. All rights reserved.
               </Text>
@@ -75,11 +75,9 @@ const VerificationEmail: React.FC<VerificationEmailProps> = ({
       </Tailwind>
     </Html>
   );
-};
+}
 
 export const PreviewProps = {
   userName: "John Doe",
   verificationUrl: "https://example.com/verify?token=abc123",
 };
-
-export default VerificationEmail;

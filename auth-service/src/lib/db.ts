@@ -1,10 +1,11 @@
-import { MongoClient, Db } from "mongodb";
+import { MongoClient, Db, Collection } from "mongodb";
+import { UserProfile } from "../models/Profile";
 
 let client: MongoClient;
 let db: Db; 
 
-export async function connectToDB() {
-  const mongoDBUri = process.env.DB_LOCAL_URI; // Simplified for Docker context
+export async function connectToDatabase() {
+  const mongoDBUri = process.env.DB_LOCAL_URI;
   const dbName = process.env.DB_NAME;
 
   if (!mongoDBUri) {
@@ -20,15 +21,37 @@ export async function connectToDB() {
       await client.connect();
       console.log("MongoDB connected via native driver");
       
-      // Select the specific database and store it
       db = client.db(dbName);
+      await createIndexes();
 
     } catch (error) {
       console.error("Failed to connect to MongoDB", error);
-      process.exit(1);
+      throw error;
     }
   }
   return client;
 }
 
-export { db };
+async function createIndexes() {
+  const profileCollection = db.collection<UserProfile>("profiles");
+  await profileCollection.createIndex({ userId: 1 }, { unique: true });
+  console.log("Indexes created");
+}
+
+export function getDatabase(): Db {
+  if (!db) {
+    throw new Error("Database not initialized. Call connectToDatabase first.");
+  }
+  return db;
+}
+
+export function getProfileCollection(): Collection<UserProfile> {
+  return getDatabase().collection<UserProfile>("profiles");
+}
+
+export async function closeDatabase(): Promise<void> {
+  if (client) {
+    await client.close();
+    console.log("MongoDB connection closed");
+  }
+}

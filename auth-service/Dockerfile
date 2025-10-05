@@ -26,7 +26,7 @@ RUN npm install --only=production
 COPY --from=builder /app/dist ./dist
 
 # Expose the port
-EXPOSE 3000
+EXPOSE 8000
 
 # The command to start the server, running the compiled JavaScript
 CMD ["npm", "start"]
