@@ -1,8 +1,11 @@
 import { type FC, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 
 const Home: FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { user, logout, isAuthenticated } = useAuth();
 
   return (
     <div className="bg-white text-gray-800 min-h-screen flex flex-col">
@@ -17,10 +20,61 @@ const Home: FC = () => {
             <Link to="/pricing" className="hover:text-blue-500">Pricing</Link>
             <Link to="/contact" className="hover:text-blue-500">Contact</Link>
           </nav>
-          <div className="hidden md:flex items-center space-x-4">
-            <Link to="/login" className="text-gray-600 hover:text-blue-500">Login</Link>
-            <Link to="/register" className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">Register</Link>
+
+          <div className="hidden md:flex items-center space-x-4 relative">
+            {isAuthenticated ? (
+              <div className="relative">
+                <button
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-md"
+                >
+                  <img
+                    src={user?.image || '/default-avatar.png'}
+                    alt="profile"
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                  <span>{user?.name || 'User'}</span>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      onClick={logout}
+                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link to="/login" className="text-gray-600 hover:text-blue-500">Login</Link>
+                <Link
+                  to="/register"
+                  className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
+          
           <div className="md:hidden">
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-800 focus:outline-none">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

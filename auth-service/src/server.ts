@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
-import { connectToDatabase, closeDatabase } from "./lib/db";
+import {closeDatabase, connectToDatabase } from "./lib/db";
 import { auth } from "./lib/auth";
 import userRouter from "./routes/route";
 

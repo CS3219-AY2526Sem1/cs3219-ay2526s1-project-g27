@@ -21,6 +21,7 @@ export function SignUpForm({
   const handleSignUp = async (event: React.FormEvent) => {
     event.preventDefault()
     setIsLoading(true)
+    const frontendUrl = import.meta.env.VITE_FRONTEND_URL
 
     try {
       const { data, error } = await authClient.signUp.email(
@@ -28,7 +29,7 @@ export function SignUpForm({
           name,
           email,
           password,
-          callbackURL: "/", // For email verification redirect
+          callbackURL: frontendUrl, // For email verification redirect
         },
         {
           onSuccess: () => {

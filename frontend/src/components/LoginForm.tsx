@@ -19,17 +19,19 @@ export function LoginForm({
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
+    const frontendUrl = import.meta.env.VITE_FRONTEND_URL
+
 
     const { data, error } = await authClient.signIn.email(
       {
         email,
         password,
-        callbackURL: "/dashboard",
+        callbackURL: frontendUrl,
       },
       {
         onSuccess: () => {
           // Redirect to the dashboard on successful login
-          navigate("/dashboard", { replace: true });
+          navigate("/", { replace: true });
         },
         onError: (ctx) => {
           // Display an error message and re-enable the form
@@ -43,7 +45,7 @@ export function LoginForm({
   const handleSocialLogin = async (provider: "google" | "github" | "apple") => {
     await authClient.signIn.social({
       provider,
-      callbackURL: "/dashboard",
+      callbackURL: "/",
     });
   };
 
@@ -130,7 +132,7 @@ export function LoginForm({
               </div>
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <a href="/signup" className="underline underline-offset-4">
+                <a href="/register" className="underline underline-offset-4">
                   Sign up
                 </a>
               </div>

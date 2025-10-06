@@ -1,19 +1,16 @@
 import { betterAuth } from "better-auth";
+import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { MongoClient } from 'mongodb';
 import { Resend } from 'resend';
-import { render } from '@react-email/render'; // Add this import
+import { render } from '@react-email/render';
 import VerificationEmail from './emails/VerificationEmail';
+import express from "express";
 
-const databaseUrl = process.env.DB_LOCAL_URI;
-const databaseName = process.env.DB_NAME;
 
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL environment variable is not set!");
-}
 
-const client = new MongoClient(databaseUrl);
-const db = client.db(databaseName);
+
+const client = new MongoClient(process.env.DB_LOCAL_URI as string);
+const db = client.db(process.env.DB_NAME as string);
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export type User = {
@@ -27,6 +24,8 @@ export type User = {
   handle: string;
   currentRating: number;
 };
+
+
 
 export const auth = betterAuth({
   trustedOrigins: [process.env.FRONTEND_URL as string],
@@ -55,7 +54,6 @@ export const auth = betterAuth({
       user: { email: string; name: string };
       url: string;
     }) => {
-      // Render the React component to HTML
       const emailHtml = await render(
         VerificationEmail({ userName: user.name, verificationUrl: url })
       );
@@ -64,10 +62,29 @@ export const auth = betterAuth({
         from: process.env.EMAIL_FROM as string,
         to: user.email,
         subject: 'Verify your email',
-        html: emailHtml // Use html instead of react
+        html: emailHtml 
       });
+    },
+    async afterEmailVerifcation({user, request}: {user: User, request: express.Request}) {
+      try {
+        const profileCollection = db.collection("profiles");
+        await profileCollection.insertOne({
+          userId: user.id,
+          handle: (user as any).handle || null,
+          currentRating: 1000,
+          problemsSolved: [],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+
+        console.log("Profile created for user: After verifcation", user.id);
+      } catch (error) {
+        console.error("Error creating profile for user:", user.id, error);
+      }
     }
+    
   },
+
 
   user: {
     additionalFields: {
@@ -109,5 +126,5 @@ export const auth = betterAuth({
     }
   },
   
-  database: mongodbAdapter(db, {}),
+  database: mongodbAdapter(db, {})
 });

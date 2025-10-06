@@ -188,4 +188,14 @@ export class ProfileController {
       res.status(500).json({ error: "Internal server error" });
     }
   }
+
+  static async updateScore(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params; // Better Auth user ID
+
+      
+    } catch (error) {
+
+    }
+  }
 }

@@ -23,7 +23,7 @@ const AppRouter: FC = () => {
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Register />} />
+        <Route path="/register" element={<Register />} />
         {/* <Route path="/features" element={<Features />} /> */}
 
         {/* Protected Routes

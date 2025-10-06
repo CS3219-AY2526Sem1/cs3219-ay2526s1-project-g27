@@ -4,6 +4,8 @@ import { UserProfile } from "../models/Profile";
 let client: MongoClient;
 let db: Db; 
 
+
+
 export async function connectToDatabase() {
   const mongoDBUri = process.env.DB_LOCAL_URI;
   const dbName = process.env.DB_NAME;
@@ -29,7 +31,7 @@ export async function connectToDatabase() {
       throw error;
     }
   }
-  return client;
+  return { client, db };
 }
 
 async function createIndexes() {
@@ -37,6 +39,7 @@ async function createIndexes() {
   await profileCollection.createIndex({ userId: 1 }, { unique: true });
   console.log("Indexes created");
 }
+
 
 export function getDatabase(): Db {
   if (!db) {
