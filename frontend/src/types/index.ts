@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   email: string;
-  name?: string; // name is optional
+  username?: string; // username is optional
 }
 
 export interface AuthContextType {

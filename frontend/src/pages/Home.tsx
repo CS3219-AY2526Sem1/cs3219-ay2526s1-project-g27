@@ -2,46 +2,8 @@ import { type FC, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const Home: FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
   return (
     <div className="bg-white text-gray-800 min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="py-6 px-4 sm:px-6 md:px-8">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">
-            <Link to="/">CodeCollab</Link>
-          </h1>
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/features" className="hover:text-blue-500">Features</Link>
-            <Link to="/pricing" className="hover:text-blue-500">Pricing</Link>
-            <Link to="/contact" className="hover:text-blue-500">Contact</Link>
-          </nav>
-          <div className="hidden md:flex items-center space-x-4">
-            <Link to="/login" className="text-gray-600 hover:text-blue-500">Login</Link>
-            <Link to="/register" className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">Register</Link>
-          </div>
-          <div className="md:hidden">
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-800 focus:outline-none">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16m-7 6h7"} />
-              </svg>
-            </button>
-          </div>
-        </div>
-        {isMenuOpen && (
-          <div className="md:hidden mt-4">
-            <nav className="flex flex-col space-y-4">
-              <Link to="/features" className="hover:text-blue-500">Features</Link>
-              <Link to="/pricing" className="hover:text-blue-500">Pricing</Link>
-              <Link to="/contact" className="hover:text-blue-500">Contact</Link>
-              <Link to="/login" className="text-gray-600 hover:text-blue-500">Login</Link>
-              <Link to="/register" className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">Register</Link>
-            </nav>
-          </div>
-        )}
-      </header>
-
       {/* Hero Section */}
       <main className="flex-grow text-center py-20 px-4 flex items-center">
         <div className="container mx-auto">

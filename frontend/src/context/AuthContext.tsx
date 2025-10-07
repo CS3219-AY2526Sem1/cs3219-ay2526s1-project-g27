@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode, type FC } from 'react';
+import { createContext, useContext, type ReactNode, type FC } from 'react';
 import type { User, AuthContextType } from '@/types';
 import { authClient } from '@/lib/auth-client'; 
 
@@ -29,7 +29,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const user: User | null = session?.user ? {
     id: session.user.id,
     email: session.user.email,
-    name: session.user.name
+    username: session.user.name
     // Add other user properties from the session as needed
   } : null;
 
