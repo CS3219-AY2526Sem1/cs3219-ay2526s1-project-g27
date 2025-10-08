@@ -73,3 +73,5 @@ I also used it to generate the email template as well as make changes to the cod
 # Author Notes:
 For any changes using AI, I do make slight adjustments since often the code might produce some error with just wholesale since it doesn't adjust to all of the code context ( My strategy is just copy and pasting code into the llm and see the type of intuition and structure it generates) . 
 For certain folders like `AuthMiddleware.ts` i might copy wholesale the boiler plate code. Otherwise, there are edits to make it , either in the opinion that the way the code was written by AI was not of a production level or good structure or making some custom adjustment so it fits other folders. 
+
+For the Resend part, i adapted it from the idea of a youtube video featuring resend and betterauth tutorial.
