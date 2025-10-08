@@ -1,40 +1,28 @@
-import { type FC, lazy, Suspense } from 'react';
+import { type FC } from 'react';
 import { Routes, Route } from 'react-router-dom';
+
+import HomePage from '@/pages/Home';
+import LoginPage from '@/pages/auth/Login';
+import RegisterPage from '@/pages/auth/Register';
 import NotFound from '@/pages/NotFound';
-
-// Lazily import all your pages
-const Home = lazy(() => import('@/pages/Home'));
-const Login = lazy(() => import('@/pages/auth/Login'));
-const Register = lazy(() => import('@/pages/auth/SignUp'));
-// const Dashboard = lazy(() => import('@/pages/Dashboard'));
-// const NotFound = lazy(() => import('@/pages/NotFound'));
-// Add other pages as you create them
-// const Register = lazy(() => import('@/pages/Register'));
-// const Features = lazy(() => import('@/pages/Features'));
-
-// Create placeholder pages so the imports don't fail
-// e.g., src/pages/Login.tsx => export default function Login() { return <div>Login Page</div>; }
+import ProtectedRoute from '@/routes/ProtectedRoute';
 
 const AppRouter: FC = () => {
   return (
-    // The Suspense fallback will be shown while the lazy-loaded component is fetched
-    <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        {/* <Route path="/features" element={<Features />} /> */}
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      {/* <Route path="/features" element={<Features />} /> */}
 
-        {/* Protected Routes
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Route> */}
-        
-        {/* 404 Handler */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Suspense>
+      {/* Protected Routes */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/" element={<HomePage />} />
+      </Route>
+      
+      {/* 404 Handler */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
 
