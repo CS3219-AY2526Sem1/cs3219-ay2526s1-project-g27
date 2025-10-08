@@ -66,7 +66,8 @@ export default function RegisterForm() {
         toast.success(
           "Sign-up successful! Please check your email to verify your account."
         );
-        navigate("/check-email"); // TODO: Implement check-email page
+        navigate("/"); // TODO: Implement check-email page
+      } 
     } catch (err) {
       console.error("An unexpected error occurred:", err);
       toast.error("An unexpected error occurred. Please try again.");
@@ -79,7 +80,6 @@ export default function RegisterForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FieldGroup>
-          {/* Username */}
           <FormField
             control={form.control}
             name="username"

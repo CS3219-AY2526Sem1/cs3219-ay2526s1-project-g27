@@ -76,8 +76,3 @@ export default function VerificationEmail({
     </Html>
   );
 }
-
-export const PreviewProps = {
-  userName: "John Doe",
-  verificationUrl: "https://example.com/verify?token=abc123",
-};
