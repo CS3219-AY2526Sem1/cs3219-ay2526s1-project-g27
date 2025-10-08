@@ -21,7 +21,7 @@ export default defineConfig({
     host: true,
     open: false,
     proxy: {
-      '/api': 'http://auth-service:3000',
+      '/api': 'http://auth-service:8000',
     },
     watch : {
       usePolling: true,

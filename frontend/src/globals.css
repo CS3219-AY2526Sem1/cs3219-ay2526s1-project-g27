@@ -1,0 +1,48 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* === Fonts === */
+@import "@fontsource/pixelify-sans";
+@import "@fontsource/montserrat";
+@import "@fontsource/press-start-2p";
+
+/* === Custom Theme === */
+@theme {
+  /* Font families */
+  --font-pixelify-sans: "Pixelify Sans", system-ui;
+  --font-press-start-2p: "Press Start 2P", system-ui;
+  --font-montserrat: "Montserrat", sans-serif;
+
+  /* You can also define colors, radii, etc. here if needed */
+  --color-navbar: #d9d9d9;
+}
+
+/* === Base Styles === */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-montserrat);
+  background-color: var(--color-background, white);
+  color: var(--color-foreground, black);
+}
+
+/* === Utility Layer === */
+@layer utilities {
+  .container {
+    @apply mx-auto max-w-screen-2xl px-4 md:px-6 lg:px-8;
+  }
+}
+
+/* === Extra Classes === */
+.card {
+  @apply p-8 rounded-2xl shadow-sm bg-white;
+}
+
+.read-the-docs {
+  color: #888;
+}

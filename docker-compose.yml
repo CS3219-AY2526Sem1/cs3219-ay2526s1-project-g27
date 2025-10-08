@@ -6,12 +6,12 @@ services:
       dockerfile: Dockerfile.dev
     container_name: auth-service-dev
     ports:
-      - "3000:3000" # Expose to host machine for direct API testing
+      - "8000:8000" # Expose to host machine for direct API testing
     volumes:
       - ./auth-service:/app
       - /app/node_modules
     env_file:
-      - ./auth-service/.env
+      - .env 
     depends_on:
       - mongo
 
@@ -28,6 +28,8 @@ services:
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+    env_file:
+      - .env
     depends_on:
       - auth-service
 
