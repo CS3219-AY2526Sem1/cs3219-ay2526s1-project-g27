@@ -30,3 +30,5 @@ By keeping them separate, we can manage their lifecycle independently. For examp
 
 **Solution**: We decided to create a separate collection for PeerPrep user profile data. We use `userId` to link authentication data with PeerPrep user profile data. This preserves the source of truth for userId to be the authenticator. However, we also use the fact that with sessions, we can store the userId in the session object. This means that when a user is authenticated, we can retrieve their userId from the session object and use it to query the PeerPrep user profile collection. This way, we can keep the two collections separate, we still are able to achieve comparable performance
 
+### Profile
+- Set up profile with m1-auth. I felt that it was reasonable to justify since authentication and user  has overlapping domain. So by making it into 1 service, we can allow easy retrieval of profile (Without api backend call to another service)
