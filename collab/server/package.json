@@ -59,7 +59,8 @@
   },
   "dependencies": {
     "@y/protocols": "^1.0.6-1",
-    "lib0": "^0.2.102"
+    "lib0": "^0.2.102",
+    "mongodb": "^6.20.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.1",

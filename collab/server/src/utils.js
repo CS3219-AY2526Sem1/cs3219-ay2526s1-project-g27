@@ -9,6 +9,7 @@ import * as map from 'lib0/map'
 import * as eventloop from 'lib0/eventloop'
 
 import { callbackHandler, isCallbackSet } from './callback.js'
+import { mongoPersistence } from './persistence.js'
 
 const CALLBACK_DEBOUNCE_WAIT = parseInt(process.env.CALLBACK_DEBOUNCE_WAIT || '2000')
 const CALLBACK_DEBOUNCE_MAXWAIT = parseInt(process.env.CALLBACK_DEBOUNCE_MAXWAIT || '10000')
@@ -22,7 +23,7 @@ const wsReadyStateClosed = 3 // eslint-disable-line
 
 // disable gc when using snapshots!
 const gcEnabled = process.env.GC !== 'false' && process.env.GC !== '0'
-// const persistenceDir = process.env.YPERSISTENCE
+
 /**
  * @type {{bindState: function(string,WSSharedDoc):void, writeState:function(string,WSSharedDoc):Promise<any>, provider: any}|null}
  */
@@ -228,7 +229,7 @@ const pingTimeout = 30000
  * @param {import('http').IncomingMessage} req
  * @param {any} opts
  */
-export const setupWSConnection = (conn, req, { docName = (req.url || '').slice(1).split('?')[0], gc = true } = {}) => {
+export const setupWSConnection = (conn, req, { docName = (req.url || 'a').slice(1).split('?')[0], gc = true } = {}) => {
   conn.binaryType = 'arraybuffer'
   // get doc, initialize if it does not exist yet
   const doc = getYDoc(docName, gc)
