@@ -1,5 +1,3 @@
-// src/components/RegisterForm.tsx
-
 import { useState } from "react"; // 1. Import useState for loading state
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
