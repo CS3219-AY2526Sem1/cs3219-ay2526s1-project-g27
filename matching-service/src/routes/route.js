@@ -1,3 +1,4 @@
+const axios = require("axios");
 const express = require("express");
 const matchingRouter = express.Router();
 const { matchingQueue } = require('../queue/queueManager');
@@ -9,6 +10,18 @@ const { redisDB } = require("../config/redis");
 matchingRouter.post("/queue", async(req, res) => {
     try {
         const userData = req.body;
+        // to check if server side events is tracked by server
+        const SSEClientConnection = SSEClientConnections.get(userData.userId);
+        if (!SSEClientConnection) {
+            throw new Error();
+        }
+        const question = await axios.get("http://question-service:3013/question/random", { categories: [userData.topic], difficulty: userData.topic});
+        console.log('Question retrieved', question);
+        if (!question) {
+            SSEClientConnection.send("noQuestion", { message: "No question available for selected category and difficulty. Please make another selection." });
+            handleDisconnect(userData.userId, matchingQueue);
+            SSEClientConnection.close();
+        }
         const job = await matchingQueue.add("add-user",
             {
                 userId: userData.userId,
@@ -25,15 +38,9 @@ matchingRouter.post("/queue", async(req, res) => {
                 }
             }
         );
-        // to check if server side events is tracked by server
-        const SSEClientConnection = SSEClientConnections.get(userData.userId);
-        if (SSEClientConnection) {
-            console.log('there is SSE connection, adding user');
-            SSEClientConnection.send("userAdded", { message: "Successfully added to queue!" });
-            SSEClientConnection.updateJobId(job.id);
-        } else {
-            throw new Error();
-        }
+        console.log('there is SSE connection, adding user');
+        SSEClientConnection.send("userAdded", { message: "Successfully added to queue!" });
+        SSEClientConnection.updateJobId(job.id);
         return res.status(200).json({ message: "User added to queue" });
     } catch (err) {
         console.error("Error adding user to queue:", err);
@@ -87,6 +94,7 @@ matchingRouter.post("/matches", async(req, res) => {
         const userA = users.split(",")[0];
         const userB = users.split(",")[1];
         // data to be sent back to client
+        // TODO: Consider whether question should be set here or not
         const data = {
             userA: userA,
             userB: userB,

@@ -135,6 +135,12 @@ export default function MatchingPage() {
       const data = JSON.parse(event.data);
       console.log(data.message);
     });
+    matchingEventSource.addEventListener("noQuestion", (event) => {
+      // for logging purposes
+      const data = JSON.parse(event.data);
+      console.log(data.message);
+      handleErrorDisplay(data.message);
+    });
   };
 
   const handleAcceptMatch = (): void => {

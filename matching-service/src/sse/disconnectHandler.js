@@ -6,11 +6,13 @@ const handleDisconnect = async(userId, matchingQueue) => {
     if (SSEClientConnection) {
         console.log("Got SSE Client connection", SSEClientConnection);
         const jobId = SSEClientConnection.getJobId();
-        const job = await matchingQueue.getJob(jobId);
-        if (job) {
-            console.log("Attempt to remove job due to disconnect");
-            await job.remove();
-            console.log("Removed job due to disconnect");
+        if (jobId) {
+            const job = await matchingQueue.getJob(jobId);
+            if (job) {
+                console.log("Attempt to remove job due to disconnect");
+                await job.remove();
+                console.log("Removed job due to disconnect");
+            }
         }
     }
     console.log("Attempt to delete SSE client connection");
