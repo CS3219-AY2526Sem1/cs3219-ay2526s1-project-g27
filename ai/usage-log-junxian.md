@@ -75,3 +75,20 @@ Modification of docker-compose.dev.yml file is suggested
 - [ ] Rejected
 # Author Notes:
 Followed the recommended solution. Tested and works.
+
+# Date / Time:
+2025-10-12 18:00
+# Tool:
+Gemini 2.5 Flash
+# Prompt/Command:
+Advise on how i should be breaking up this code into files. (Provided the entire code of server.js file)
+
+# Output Summary:
+Recommended File Structure
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+# Author Notes:
+Followed the recommended file structure. Modified to avoid circular dependencies.
