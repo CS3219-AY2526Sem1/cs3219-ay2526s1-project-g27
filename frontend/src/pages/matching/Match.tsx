@@ -15,13 +15,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { useAuth } from "@/context/AuthContext";
+import axios from "axios";
 
 interface MatchedUserType {
   name: string;
   level: string;
   topic: string;
-  rating: string;
-  experience: string;
 }
 
 export default function MatchingPage() {
@@ -30,11 +30,16 @@ export default function MatchingPage() {
   const [isMatching, setIsMatching] = useState<boolean>(false);
   const [timer, setTimer] = useState<number>(0);
   const [showError, setShowError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [matchFound, setMatchFound] = useState<boolean>(false);
   const [matchedUser, setMatchedUser] = useState<MatchedUserType | null>(null);
+  const [matchId, setMatchId] = useState<string>('')
+  const [showAcceptMatch, setShowAcceptMatch] = useState<boolean>(false);
 
   const difficulties = ['Easy', 'Medium', 'Hard'];
   const topics = ['Arrays', 'Strings', 'Dynamic Programming', 'Graphs', 'Trees', 'Sorting'];
+  const { user } = useAuth();
+  const userId = user?.id;
 
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined;
@@ -57,27 +62,98 @@ export default function MatchingPage() {
   };
 
   const handleStartMatching = (): void => {
+    handleErrorDisplay('');
     if (!difficulty || !topic) {
-      setShowError(true);
+      handleErrorDisplay('No peer found. Try again or change criteria.');
       return;
     }
-    
-    setShowError(false);
     setIsMatching(true);
+    const matchingEventSource = new EventSource(`http://localhost:3001/queue-events/${userId}`, {
+      withCredentials: true
+    });
+    matchingEventSource.onopen = () => {
+      console.log("SSE connection established, now adding user to queue...");
 
-    // Simulate finding a match after 5 seconds
-    setTimeout(() => {
+      const userData = {
+        userId,
+        topic,
+        difficulty,
+      };
+
+      axios.post("http://localhost:3001/queue", userData)
+        .then(response => {
+          if (response.status === 200) {
+            console.log('Added user successfully to queue');
+          }
+        })
+        .catch(error => {
+          handleErrorDisplay(error.response?.data?.error || "Failed to connect to queue");
+        });
+    };
+    matchingEventSource.addEventListener("matchFound", (event) => {
+      setShowAcceptMatch(true);
+      setTimeout(() => {
+        setShowAcceptMatch(false);
+      }, 14000);
+      const data = JSON.parse(event.data);
+      setMatchId(data.matchId);
+    });
+    matchingEventSource.addEventListener("matchSuccess", (event) => {
+      // TODO: need to modify the data passed in here
+      console.log("Redirection to collaboration space!");
+      setShowAcceptMatch(false);
       setIsMatching(false);
       setMatchFound(true);
-      setMatchedUser({
-        name: 'Alex Johnson',
+      const data = JSON.parse(event.data);
+      const matchedUserId = data.userA === userId ? data.userB : data.userA
+      const matchedUser = {
+        name: matchedUserId,
         level: difficulty,
-        topic: topic,
-        rating: '1850',
-        experience: '3 years'
-      });
-    }, 5000);
+        topic: topic
+      }
+      setMatchedUser(matchedUser)
+    });
+    matchingEventSource.addEventListener("matchFailed", (event) => {
+      console.log('match failed event', event);
+      const data = JSON.parse(event.data);
+      handleErrorDisplay(data.message);
+    });
+    matchingEventSource.addEventListener("requeue", (event) => {
+      const data = JSON.parse(event.data);
+      console.log(data.message);
+      setMatchId('');
+      setErrorMessage(data.message);
+    });
+    // for both match failed and success events
+    matchingEventSource.addEventListener("terminate", (event) => {
+      console.log("close connection");
+      matchingEventSource.close();
+      setIsMatching(false);
+    })
+    matchingEventSource.addEventListener("matchAccepted", (event) => {
+      // Just for logging purposes
+      const data = JSON.parse(event.data);
+      console.log(data.message);
+    });
   };
+
+  const handleAcceptMatch = (): void => {
+    const matchData = {
+      userId: userId,
+      matchId: matchId
+    };
+    axios.post("http://localhost:3001/matches", matchData).then(response => {
+      // Can be deleted later, for now, to check if it works
+      console.log(response.data.message);
+    }).catch(error => {
+      handleErrorDisplay(error.response?.data?.error || "Something went wrong, please queue again.");
+    })
+  }
+
+  const handleErrorDisplay = (errorMessage: string): void => {
+    setErrorMessage(errorMessage);
+    setShowError(true);
+  }
 
   const handleCloseDialog = (): void => {
     setMatchFound(false);
@@ -133,19 +209,19 @@ export default function MatchingPage() {
           {showError && (
             <div className="flex items-center justify-center gap-2 text-gray-800">
               <AlertCircle className="w-5 h-5" />
-              <span>No peer found. Try again or change criteria.</span>
+              <span>{ errorMessage }</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Match Found Dialog */}
+      {/* Match Success Dialog */}
       <Dialog open={matchFound} onOpenChange={handleCloseDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Match Found! 🎉</DialogTitle>
+            <DialogTitle className="text-2xl">Match Success 🎉</DialogTitle>
             <DialogDescription className="text-base">
-              You've been matched with a peer
+              Redirecting to collaboration space...
             </DialogDescription>
           </DialogHeader>
           {matchedUser && (
@@ -163,14 +239,6 @@ export default function MatchingPage() {
                   <span className="font-semibold text-gray-600">Topic:</span>
                   <span className="text-lg">{matchedUser.topic}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="font-semibold text-gray-600">Rating:</span>
-                  <span className="text-lg">{matchedUser.rating}</span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="font-semibold text-gray-600">Experience:</span>
-                  <span className="text-lg">{matchedUser.experience}</span>
-                </div>
               </div>
               <div className="flex gap-3 pt-4">
                 <Button onClick={handleCloseDialog} className="flex-1">
@@ -182,6 +250,25 @@ export default function MatchingPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Match Accept Dialog */}
+      <Dialog open={showAcceptMatch}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Match Found! 🎉</DialogTitle>
+            <DialogDescription className="text-base">
+              You've been matched with a peer
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex gap-3 pt-4">
+              <Button onClick={handleAcceptMatch} className="flex-1">
+                Accept
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

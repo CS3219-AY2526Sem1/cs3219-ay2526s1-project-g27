@@ -4,10 +4,16 @@ const { createBullBoard } = require("@bull-board/api");
 const { BullMQAdapter } = require("@bull-board/api/bullMQAdapter");
 const { ExpressAdapter } = require("@bull-board/express");
 const IORedis = require('ioredis');
+const cors = require("cors");
 
 require("dotenv").config();
 
 const app = express();
+const corsOptions = {
+    origin: 'http://localhost:5173',
+    credentials: true,
+};
+app.use(cors(corsOptions));
 
 app.use(express.json()); 
 
@@ -76,15 +82,18 @@ class SSEClientConnection {
 
     // sends data as a standard SSE event
     send(event, data) {
+        console.log('sending SSE event');
         if (this.res.writable) {
-            this.res.write(`event ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+            console.log('can send SSE event');
+            this.res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
         }
     }
 
     // close SSE connection
     close() {
-        this.res.end();
-        console.log(`Server deliberately ended connection for user with job ${this.jobId}`);
+        if (this.res.writable) {
+            this.res.write("event: terminate\ndata: Stop listening for match events.\n\n");
+        }
     }
 
     getJobId() {
@@ -125,14 +134,35 @@ const addUserToQueue = async(req, res) => {
         // to check if server side events is tracked by server
         const SSEClientConnection = SSEClientConnections.get(userData.userId);
         if (SSEClientConnection) {
+            console.log('there is SSE connection, adding user');
             SSEClientConnection.send("userAdded", { message: "Successfully added to queue!" });
             SSEClientConnection.updateJobId(job.id);
+        } else {
+            throw new Error();
         }
         return res.status(200).json({ message: "User added to queue" });
     } catch (err) {
         console.error("Error adding user to queue:", err);
         return res.status(500).json({ error: "Failed to add user to queue" });
     }
+}
+
+const handleDisconnect = async(userId) => {
+    const SSEClientConnection = SSEClientConnections.get(userId);
+    // remove user from queue
+    if (SSEClientConnection) {
+        console.log("Got SSE Client connection", SSEClientConnection);
+        const jobId = SSEClientConnection.getJobId();
+        const job = await matchingQueue.getJob(jobId);
+        if (job) {
+            console.log("Attempt to remove job due to disconnect");
+            await job.remove();
+            console.log("Removed job due to disconnect");
+        }
+    }
+    console.log("Attempt to delete SSE client connection");
+    SSEClientConnections.delete(userId);
+    console.log("Deleted SSE client connection");
 }
 
 // routes that server provides
@@ -155,21 +185,7 @@ app.get("/queue-events/:userId", (req, res) => {
     // clean up on disconnect
     req.on("close", async() => {
         console.log(`Client disconnected: ${userId}`);
-        const SSEClientConnection = SSEClientConnections.get(userId);
-        // remove user from queue
-        if (SSEClientConnection) {
-            console.log("Got SSE Client connection", SSEClientConnection);
-            const jobId = SSEClientConnection.getJobId();
-            const job = await matchingQueue.getJob(jobId);
-            if (job) {
-                console.log("Attempt to remove job due to disconnect");
-                await job.remove();
-                console.log("Removed job due to disconnect");
-            }
-        }
-        console.log("Attempt to delete SSE client connection");
-        SSEClientConnections.delete(userId);
-        console.log("Deleted SSE client connection");
+        handleDisconnect(userId);
     });
 });
 
@@ -182,6 +198,7 @@ const checkMatchTimeout = async(matchId) => {
             if (SSEClientConnection) {
                 if (allFields[field] === "false") {
                     SSEClientConnection.send("matchFailed", { message: "Did not accept match within time limit, please try again!" });
+                    handleDisconnect(userId);
                     SSEClientConnection.close();
                 } else {
                     const job = await matchingQueue.add("add-user",
@@ -201,7 +218,7 @@ const checkMatchTimeout = async(matchId) => {
                             timestamp: SSEClientConnection.getTimestamp()
                         }
                     );
-                    SSEClientConnection.send("userAdded", { message: "Successfully added to queue!" });
+                    SSEClientConnection.send("requeue", { message: "Matched user failed to accept the match." });
                     SSEClientConnection.updateJobId(job.id);
                 }
             } 
@@ -234,10 +251,10 @@ const handleTentativeMatch = async(jobData) => {
         const SSEClientAConnection = SSEClientConnections.get(userA);
         const SSEClientBConnection = SSEClientConnections.get(userB);
         if (SSEClientAConnection) {
-            SSEClientAConnection.send("matchFound", { message: "Successfully found a match, please accept!", matchId, matchData });
+            SSEClientAConnection.send("matchFound", { message: "Successfully found a match, please accept!", matchId: matchId, matchData });
         }
         if (SSEClientBConnection) {
-            SSEClientBConnection.send("matchFound", { message: "Successfully found a match, please accept!", matchId, matchData });
+            SSEClientBConnection.send("matchFound", { message: "Successfully found a match, please accept!", matchId: matchId, matchData });
         }
 
         setTimeout(async() => await checkMatchTimeout(matchId), 15000);
@@ -245,17 +262,22 @@ const handleTentativeMatch = async(jobData) => {
 }
 
 const finalizeMatch = async(matchId, data) => {
+    console.log('data in finalize match', data, data.userA, data.userB);
     const SSEClientAConnection = SSEClientConnections.get(data.userA);
     const SSEClientBConnection = SSEClientConnections.get(data.userB);
     if (SSEClientAConnection) {
         SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", data });
+        handleDisconnect(data.userA);
         SSEClientAConnection.close();
     }
     if (SSEClientBConnection) {
         SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", data });
+        handleDisconnect(data.userB);
         SSEClientBConnection.close();
     }
     await tentativeMatchCache.del(matchId);
+    const isMatchDeleted = await tentativeMatchCache.exists(matchId) < 1 ? true : false;
+    console.log('is delete successful', isMatchDeleted);
 }
 
 const acceptTentativeMatch = async(req, res) => {
@@ -398,6 +420,7 @@ matchingQueueEvents.on("failed", async ({ failedReason, jobId }) => {
             const SSEClientConnection = SSEClientConnections.get(job.data.userId);
             if (SSEClientConnection) {
                 SSEClientConnection.send("matchFailed", { message: "Unable to find a match, please try again!" });
+                handleDisconnect(job.data.userId);
                 SSEClientConnection.close();
             }
         } else {
