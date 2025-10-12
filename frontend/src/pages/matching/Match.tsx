@@ -99,12 +99,15 @@ export default function MatchingPage() {
       setMatchId(data.matchId);
     });
     matchingEventSource.addEventListener("matchSuccess", (event) => {
-      // TODO: need to modify the data passed in here
+      // TODO: add redirection to collaboration logic here
       console.log("Redirection to collaboration space!");
       setShowAcceptMatch(false);
       setIsMatching(false);
       setMatchFound(true);
       const data = JSON.parse(event.data);
+      console.log("data received", data);
+      console.log("signed data received", data.signedData); // this is the signed JWT
+      console.log("users", data.userA, data.userB);
       const matchedUserId = data.userA === userId ? data.userB : data.userA
       const matchedUser = {
         name: matchedUserId,
@@ -122,7 +125,7 @@ export default function MatchingPage() {
       const data = JSON.parse(event.data);
       console.log(data.message);
       setMatchId('');
-      setErrorMessage(data.message);
+      handleErrorDisplay(data.message);
     });
     // for both match failed and success events
     matchingEventSource.addEventListener("terminate", (event) => {

@@ -2,6 +2,8 @@
 const { redisDB } = require('../config/redis');
 const { handleDisconnect } = require('../sse/disconnectHandler');
 const { SSEClientConnections } = require('../sse/SSEClientConnection');
+const jwt = require("jsonwebtoken");
+require('dotenv').config();
 
 const checkMatchTimeout = async(matchId, matchingQueue) => {
     const allFields = await redisDB.hgetall(matchId);
@@ -79,13 +81,15 @@ const finalizeMatch = async(matchId, data, matchingQueue) => {
     console.log('data in finalize match', data, data.userA, data.userB);
     const SSEClientAConnection = SSEClientConnections.get(data.userA);
     const SSEClientBConnection = SSEClientConnections.get(data.userB);
+    const signedData = jwt.sign(data, process.env.JWT_SECRET);
+    console.log('signed data', signedData);
     if (SSEClientAConnection) {
-        SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", data });
+        SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData });
         handleDisconnect(data.userA, matchingQueue);
         SSEClientAConnection.close();
     }
     if (SSEClientBConnection) {
-        SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", data });
+        SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData });
         handleDisconnect(data.userB, matchingQueue);
         SSEClientBConnection.close();
     }

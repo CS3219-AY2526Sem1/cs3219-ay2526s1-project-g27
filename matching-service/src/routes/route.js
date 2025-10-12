@@ -94,10 +94,11 @@ matchingRouter.post("/matches", async(req, res) => {
         const userA = users.split(",")[0];
         const userB = users.split(",")[1];
         // data to be sent back to client
-        // TODO: Consider whether question should be set here or not
+        // TODO: Consider whether question should be set here or not, consider collaboration data needed here
         const data = {
             userA: userA,
             userB: userB,
+            time: Date.now()
         }
         await finalizeMatch(matchId, data, matchingQueue);
         return res.status(200).json({ message: "Redirecting to collaboration space..." });
