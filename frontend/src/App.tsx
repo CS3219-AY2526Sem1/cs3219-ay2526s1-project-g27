@@ -4,15 +4,18 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext.tsx';
 import NavBar from '@/components/common/NavBar';
 import ErrorBoundary from '@/components/ErrorBoundary'; // Recommended for production
+import { MatchingProvider } from './context/MatchContext';
 
 const App: FC = () => {
   return (
     <BrowserRouter> 
       <AuthProvider>
-        <ErrorBoundary>
-          <NavBar />
-          <AppRouter />
-        </ErrorBoundary>
+        <MatchingProvider>
+            <ErrorBoundary>
+              <NavBar />
+              <AppRouter />
+            </ErrorBoundary>
+        </MatchingProvider>
       </AuthProvider>
     </BrowserRouter>
   );

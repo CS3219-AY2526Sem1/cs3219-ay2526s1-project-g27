@@ -92,3 +92,20 @@ Recommended File Structure
 - [ ] Rejected
 # Author Notes:
 Followed the recommended file structure. Modified to avoid circular dependencies.
+
+# Date / Time:
+2025-10-13 12:30
+# Tool:
+ChatGPT 5 
+# Prompt/Command:
+Currently the match page logic is all here in one file (Copied and pasted code of Match.tsx). However, I want the idea that if the user joins the queue (and has not be removed from the queue by the server), it should still reflect that the user is in the queue and cannot join. This function should be present when user navigate to other pages in my application and then back to it. Moreover, i will want to show the timer of the queue as well at any part of the application, not just in the match page. Can you advise on how to go about doing this implementation and what are the resources/documentations to look into?
+
+# Output Summary:
+Recommended files to create and how should the logic be separated. Also provided some backbone code.
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+# Author Notes:
+Followed the recommended files to create and used the backbone of the files (MatchContext.tsx and QueueTimerDisplay.tsx). Tested and works.

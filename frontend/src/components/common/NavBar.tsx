@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from '@/context/AuthContext';
+import QueueTimerDisplay from "../QueueTimerDisplay";
 
 // Arrow SVG component
 const ArrowIndicator = () => (
@@ -18,44 +19,47 @@ export default function NavBar() {
   const activeLinkClasses = "relative text-foreground font-semibold";
 
   return (
-    <header className="sticky top-0 w-full border-b border-gray-200 bg-navbar">
-      <div className="container mx-auto flex h-auto items-center justify-between px-4">
-        {/* Left: Logo / Header */}
-        <div className="flex items-center text-2xl sm:text-3xl lg:text-4xl sm:p-2 md:p-4">
-          <NavLink to="/" className="font-pixelify-sans">
-            PeerPrep
-          </NavLink>
+    <>
+      <header className="sticky top-0 w-full border-b border-gray-200 bg-navbar">
+        <div className="container mx-auto flex h-auto items-center justify-between px-4">
+          {/* Left: Logo / Header */}
+          <div className="flex items-center text-2xl sm:text-3xl lg:text-4xl sm:p-2 md:p-4">
+            <NavLink to="/" className="font-pixelify-sans">
+              PeerPrep
+            </NavLink>
+          </div>
+          {/* Right: Navigation (only if authenticated) */}
+          { isAuthenticated && (
+            <nav className="flex flex-1 items-center justify-around space-x-6 text-md sm:text-large lg:text-xl">
+              <NavLink to="/match" className={({isActive}) => isActive ? activeLinkClasses : linkClasses}>
+                {({isActive}) => (
+                  <div className='container font-press-start-2p'>
+                    {isActive && <ArrowIndicator />}
+                    MATCH!
+                  </div>
+                )}
+              </NavLink>
+              <NavLink to="/" className={({isActive}) => isActive ? activeLinkClasses : linkClasses}>
+                {({isActive}) => (
+                  <div className='container'>
+                    {isActive && <ArrowIndicator />}
+                    Dashboard
+                  </div>
+                )}
+              </NavLink>
+              <NavLink to="/profile" className={({isActive}) => isActive ? activeLinkClasses : linkClasses}>
+                {({isActive}) => (
+                  <div className='container'>
+                    {isActive && <ArrowIndicator />}
+                    Profile
+                  </div>
+                )}
+              </NavLink>
+            </nav>
+          )}
         </div>
-        {/* Right: Navigation (only if authenticated) */}
-        { isAuthenticated && (
-          <nav className="flex flex-1 items-center justify-around space-x-6 text-md sm:text-large lg:text-xl">
-            <NavLink to="/match" className={({isActive}) => isActive ? activeLinkClasses : linkClasses}>
-              {({isActive}) => (
-                <div className='container font-press-start-2p'>
-                  {isActive && <ArrowIndicator />}
-                  MATCH!
-                </div>
-              )}
-            </NavLink>
-            <NavLink to="/" className={({isActive}) => isActive ? activeLinkClasses : linkClasses}>
-              {({isActive}) => (
-                <div className='container'>
-                  {isActive && <ArrowIndicator />}
-                  Dashboard
-                </div>
-              )}
-            </NavLink>
-            <NavLink to="/profile" className={({isActive}) => isActive ? activeLinkClasses : linkClasses}>
-              {({isActive}) => (
-                <div className='container'>
-                  {isActive && <ArrowIndicator />}
-                  Profile
-                </div>
-              )}
-            </NavLink>
-          </nav>
-        )}
-      </div>
-    </header>
+      </header>
+      {isAuthenticated && <QueueTimerDisplay />}
+    </>
   );
 }
