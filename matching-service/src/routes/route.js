@@ -43,7 +43,7 @@ matchingRouter.post("/queue", async(req, res) => {
         SSEClientConnection.updateJobId(job.id);
         return res.status(200).json({ message: "User added to queue" });
     } catch (err) {
-        console.error("Error adding user to queue:", err);
+        console.error("Error in /queue route:", err);
         return res.status(500).json({ error: "Failed to add user to queue" });
     }
 });
@@ -68,42 +68,47 @@ matchingRouter.get("/queue-events/:userId", (req, res) => {
 });
 
 matchingRouter.post("/matches", async(req, res) => {
-    const { userId, matchId } = req.body;
-    const isMatchExpired = await redisDB.exists(matchId) < 1 ? true : false;
-    
-    if (isMatchExpired) {
-        return res.status(400).json({ error: "Match expired." });
-    }
-
-    const SSEClientConnection = SSEClientConnections.get(userId);
-    if (SSEClientConnection) {
-        SSEClientConnection.send("matchAccepted", { message: "Match successfully accepted!" });
-    }
-    await redisDB.hset(matchId, `accepted:${userId}`, "true");
-    
-    const allFields = await redisDB.hgetall(matchId);
-    let matchAccepted = true;
-    for (const field in allFields) {
-        if (field.startsWith("accepted:")) {
-            matchAccepted = allFields[field] === "true" ? true && matchAccepted : false;
+    try {
+        const { userId, matchId } = req.body;
+        const isMatchExpired = await redisDB.exists(matchId) < 1 ? true : false;
+        
+        if (isMatchExpired) {
+            return res.status(400).json({ error: "Match expired." });
         }
-    }
-
-    if (matchAccepted) {
-        const users = allFields["userIds"];
-        const userA = users.split(",")[0];
-        const userB = users.split(",")[1];
-        // data to be sent back to client
-        // TODO: Consider whether question should be set here or not, consider collaboration data needed here
-        const data = {
-            userA: userA,
-            userB: userB,
-            time: Date.now()
+    
+        const SSEClientConnection = SSEClientConnections.get(userId);
+        if (SSEClientConnection) {
+            SSEClientConnection.send("matchAccepted", { message: "Match successfully accepted!" });
         }
-        await finalizeMatch(matchId, data, matchingQueue);
-        return res.status(200).json({ message: "Redirecting to collaboration space..." });
-    } else {
-        return res.status(200).json({ message: "Waiting for other user to accept..." });
+        await redisDB.hset(matchId, `accepted:${userId}`, "true");
+        
+        const allFields = await redisDB.hgetall(matchId);
+        let matchAccepted = true;
+        for (const field in allFields) {
+            if (field.startsWith("accepted:")) {
+                matchAccepted = allFields[field] === "true" ? true && matchAccepted : false;
+            }
+        }
+    
+        if (matchAccepted) {
+            const users = allFields["userIds"];
+            const userA = users.split(",")[0];
+            const userB = users.split(",")[1];
+            // data to be sent back to client
+            // TODO: Consider whether question should be set here or not, consider collaboration data needed here
+            const data = {
+                userA: userA,
+                userB: userB,
+                time: Date.now()
+            }
+            await finalizeMatch(matchId, data, matchingQueue);
+            return res.status(200).json({ message: "Redirecting to collaboration space..." });
+        } else {
+            return res.status(200).json({ message: "Waiting for other user to accept..." });
+        }
+    } catch (err) {
+        console.error("Error in /matches route:", err);
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
 
@@ -118,7 +123,7 @@ matchingRouter.delete("/queue/:userId", async(req, res) => {
         }
         return res.status(200).json({ message: "User successfully removed from queue" });
     } catch (err) {
-        console.error("Error removing user from queue:", err);
+        console.error("Error in /queue/:userId route:", err);
         return res.status(500).json({ error: "Failed to remove user from queue" });
     }
 });

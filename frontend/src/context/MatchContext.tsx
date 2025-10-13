@@ -138,6 +138,12 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
             console.log(data.message);
             handleErrorDisplay(data.message);
         });
+        matchingEventSource.addEventListener("serverError", (event) => {
+            // for logging purposes
+            const data = JSON.parse(event.data);
+            console.log(data.message);
+            handleErrorDisplay(data.message);
+        });
     };
  
     const acceptMatch = () => {

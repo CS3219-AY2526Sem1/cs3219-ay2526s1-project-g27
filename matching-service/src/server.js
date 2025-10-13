@@ -29,6 +29,11 @@ app.use("/admin/queues", serverAdapter.getRouter());
 
 app.use(matchingRouter);
 
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: "Something went wrong!" });
+});
+
 app.get("/", (req, res) => res.send("Hello BullMQ + BullBoard!"));
 
 app.listen(3001, () => console.log("Server running on http://localhost:3001"));

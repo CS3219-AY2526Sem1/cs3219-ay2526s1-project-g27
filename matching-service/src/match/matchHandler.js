@@ -5,6 +5,36 @@ const { SSEClientConnections } = require('../sse/SSEClientConnection');
 const jwt = require("jsonwebtoken");
 require('dotenv').config();
 
+const requeueUser = async(userData) => {
+    const { userId, topic, difficulty, connection, matchingQueue } = userData;
+    const job = await matchingQueue.add("add-user",
+        {
+            userId: userId,
+            topic: topic,
+            difficulty: difficulty,
+            isMatched: false
+        },
+        // for reattempting to match users
+        {
+            attempts: 6,
+            backoff: {
+                type: "fixed",
+                delay: 10000,
+            }, 
+            timestamp: connection.getTimestamp()
+        }
+    );
+    connection.send("requeue", { message: "Matched user failed to accept the match." });
+    connection.updateJobId(job.id);
+}
+
+const handleServerError = (userData) => {
+    const { userId, matchingQueue, connection } = userData;
+    connection.send("serverError", { message: "Internal Server Error." });
+    handleDisconnect(userId, matchingQueue);
+    connection.close();
+}
+
 const checkMatchTimeout = async(matchId, matchingQueue) => {
     const allFields = await redisDB.hgetall(matchId);
     for (const field in allFields) {
@@ -17,25 +47,14 @@ const checkMatchTimeout = async(matchId, matchingQueue) => {
                     handleDisconnect(userId, matchingQueue);
                     SSEClientConnection.close();
                 } else {
-                    const job = await matchingQueue.add("add-user",
-                        {
-                            userId: userId,
-                            topic: allFields["topic"],
-                            difficulty: allFields["difficulty"],
-                            isMatched: false
-                        },
-                        // for reattempting to match users
-                        {
-                            attempts: 6,
-                            backoff: {
-                                type: "fixed",
-                                delay: 10000,
-                            }, 
-                            timestamp: SSEClientConnection.getTimestamp()
-                        }
-                    );
-                    SSEClientConnection.send("requeue", { message: "Matched user failed to accept the match." });
-                    SSEClientConnection.updateJobId(job.id);
+                    const userData = {
+                        userId: userId,
+                        topic: allFields["topic"],
+                        difficulty: allFields["difficulty"],
+                        connection: SSEClientConnection,
+                        matchingQueue: matchingQueue
+                    }
+                    await requeueUser(userData);
                 }
             } 
         }
@@ -47,33 +66,67 @@ const handleTentativeMatch = async(jobData, matchingQueue) => {
     const userA = jobData.userId;
     const userB = jobData.matchedUserId;
     const matchId = jobData.matchId;
-
-    const match = await redisDB.exists(matchId);
-    console.log('Match found or not', match, matchId);
-
-    if (match < 1) {
-        const hashFields = [
-            "userIds", `${userA},${userB}`, 
-            `accepted:${userA}`, "false",
-            `accepted:${userB}`, "false",
-            "topic", `${jobData.topic}`,
-            "difficulty", `${jobData.difficulty}`
-        ];
-        console.log('Adding match to cache');
-        await redisDB.hset(matchId, ...hashFields);
-        console.log('Added match to cache successfully');
-        const matchData = await redisDB.hgetall(matchId);
-
-        const SSEClientAConnection = SSEClientConnections.get(userA);
-        const SSEClientBConnection = SSEClientConnections.get(userB);
-        if (SSEClientAConnection) {
-            SSEClientAConnection.send("matchFound", { message: "Successfully found a match, please accept!", matchId: matchId, matchData });
+    const SSEClientAConnection = SSEClientConnections.get(userA);
+    const SSEClientBConnection = SSEClientConnections.get(userB);
+    if (SSEClientAConnection && SSEClientBConnection) {
+        try {
+            const match = await redisDB.exists(matchId);
+            console.log('Match found or not', match, matchId);
+        
+            if (match < 1) {
+                const hashFields = [
+                    "userIds", `${userA},${userB}`, 
+                    `accepted:${userA}`, "false",
+                    `accepted:${userB}`, "false",
+                    "topic", `${jobData.topic}`,
+                    "difficulty", `${jobData.difficulty}`
+                ];
+                console.log('Adding match to cache');
+                await redisDB.hset(matchId, ...hashFields);
+                console.log('Added match to cache successfully');
+                const matchData = await redisDB.hgetall(matchId);
+        
+                SSEClientAConnection.send("matchFound", { message: "Successfully found a match, please accept!", matchId: matchId, matchData });
+                SSEClientBConnection.send("matchFound", { message: "Successfully found a match, please accept!", matchId: matchId, matchData });
+        
+                setTimeout(async() => await checkMatchTimeout(matchId, matchingQueue), 15000);
+            }
+        } catch (err) {
+            console.error(`Error in handing tentative match found for ${matchId}`);
+            handleServerError({ userId: userA, matchingQueue: matchingQueue, connection: SSEClientAConnection})
+            handleServerError({ userId: userB, matchingQueue: matchingQueue, connection: SSEClientBConnection})
         }
-        if (SSEClientBConnection) {
-            SSEClientBConnection.send("matchFound", { message: "Successfully found a match, please accept!", matchId: matchId, matchData });
+    } else {
+        console.error("Cannot match tentatively as user(s) not connected.");
+        try {
+            if (SSEClientAConnection) {
+                const userData = {
+                    userId: userA,
+                    topic: jobData.topic,
+                    difficulty: jobData.difficulty,
+                    connection: SSEClientAConnection,
+                    matchingQueue: matchingQueue
+                }
+                await requeueUser(userData)
+            }
+            if (SSEClientBConnection) {
+                const userData = {
+                    userId: userB,
+                    topic: jobData.topic,
+                    difficulty: jobData.difficulty,
+                    connection: SSEClientAConnection,
+                    matchingQueue: matchingQueue
+                }
+                await requeueUser(userData)
+            }
+        } catch (err) {
+            if (SSEClientAConnection) {
+                handleServerError({ userId: userA, matchingQueue: matchingQueue, connection: SSEClientAConnection});
+            }
+            if (SSEClientBConnection) {
+                handleServerError({ userId: userB, matchingQueue: matchingQueue, connection: SSEClientBConnection});
+            }
         }
-
-        setTimeout(async() => await checkMatchTimeout(matchId, matchingQueue), 15000);
     }
 }
 
