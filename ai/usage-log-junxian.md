@@ -109,3 +109,20 @@ Recommended files to create and how should the logic be separated. Also provided
 - [ ] Rejected
 # Author Notes:
 Followed the recommended files to create and used the backbone of the files (MatchContext.tsx and QueueTimerDisplay.tsx). Tested and works.
+
+# Date / Time:
+2025-10-13 12:30
+# Tool:
+ChatGPT 5 
+# Prompt/Command:
+I want the QueueDisplayTimer to have a button such that there is a cross and I can invoke a function to remove the user from the queue as user request
+
+# Output Summary:
+Recommended UI for the button creation.
+
+# Action Taken:
+- [X] Accepted as-is 
+- [] Modified
+- [ ] Rejected
+# Author Notes:
+Copied the UI into QueueDisplayTime.tsx and works.

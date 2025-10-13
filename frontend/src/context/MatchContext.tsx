@@ -154,8 +154,12 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
     };
     
     const stopMatching = () => {
-        setIsMatching(false);
-        eventSource?.close();
+        axios.delete(`http://localhost:3001/queue/${userId}`).then(response => {
+            console.log(response.data.message);
+            setIsMatching(false);
+        }).catch(error => {
+            handleErrorDisplay(error.response?.data?.error || "Something went wrong.");
+        })
     };
 
     const handleErrorDisplay = (errorMessage: string): void => {

@@ -107,4 +107,20 @@ matchingRouter.post("/matches", async(req, res) => {
     }
 });
 
+matchingRouter.delete("/queue/:userId", async(req, res) => {
+    try {
+        const { userId } = req.params;
+        // to check if server side events is tracked by server
+        const SSEClientConnection = SSEClientConnections.get(userId);
+        if (SSEClientConnection) {
+            handleDisconnect(userId, matchingQueue);
+            SSEClientConnection.close();
+        }
+        return res.status(200).json({ message: "User successfully removed from queue" });
+    } catch (err) {
+        console.error("Error removing user from queue:", err);
+        return res.status(500).json({ error: "Failed to remove user from queue" });
+    }
+});
+
 module.exports = { matchingRouter };
