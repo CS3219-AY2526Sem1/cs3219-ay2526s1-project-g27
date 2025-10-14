@@ -57,6 +57,9 @@ matchingRouter.get("/queue-events/:userId", (req, res) => {
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders();
 
+    // send dummy data to trigger Firefox .onopen
+    res.write(`: connected\n\n`);
+
     // save the response object so we can push events later
     SSEClientConnections.set(userId, new SSEClientConnection(res, Date.now()));
 

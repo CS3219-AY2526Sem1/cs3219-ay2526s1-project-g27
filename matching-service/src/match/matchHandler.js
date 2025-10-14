@@ -114,7 +114,7 @@ const handleTentativeMatch = async(jobData, matchingQueue) => {
                     userId: userB,
                     topic: jobData.topic,
                     difficulty: jobData.difficulty,
-                    connection: SSEClientAConnection,
+                    connection: SSEClientBConnection,
                     matchingQueue: matchingQueue
                 }
                 await requeueUser(userData)
