@@ -70,12 +70,10 @@ const handleTentativeMatch = async(jobData, matchingQueue) => {
     const SSEClientBConnection = SSEClientConnections.get(userB);
     if (SSEClientAConnection && SSEClientBConnection) {
         try {
-            const match = await redisDB.exists(matchId);
-            console.log('Match found or not', match, matchId);
+            const created = await redisDB.hsetnx(matchId, "userIds", `${userA},${userB}`);
         
-            if (match < 1) {
+            if (created === 1) {
                 const hashFields = [
-                    "userIds", `${userA},${userB}`, 
                     `accepted:${userA}`, "false",
                     `accepted:${userB}`, "false",
                     "topic", `${jobData.topic}`,
