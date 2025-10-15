@@ -6,6 +6,7 @@ import LoginPage from '@/pages/auth/Login';
 import RegisterPage from '@/pages/auth/Register';
 import NotFound from '@/pages/NotFound';
 import ProtectedRoute from '@/routes/ProtectedRoute';
+import MatchingPage from '@/pages/matching/Match';
 
 const AppRouter: FC = () => {
   return (
@@ -18,6 +19,7 @@ const AppRouter: FC = () => {
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/match" element={<MatchingPage />} />
       </Route>
       
       {/* 404 Handler */}

@@ -11,7 +11,7 @@ interface User {
 }
 
 
-const Home: FC = () => {
+const HomePage: FC = () => {
   const { user, logout } = useAuth();
 
   return (
@@ -64,4 +64,4 @@ const Home: FC = () => {
   );
 };
 
-export default Home;
+export default HomePage;

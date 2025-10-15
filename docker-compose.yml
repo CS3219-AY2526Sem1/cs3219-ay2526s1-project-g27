@@ -46,6 +46,28 @@ services:
       - /app/node_modules
     depends_on:
       - mongo
+  
+  matching-service:
+    build:
+      context: ./matching-service
+      dockerfile: Dockerfile
+    container_name: matching-service-dev
+    volumes:
+      - ./matching-service:/app
+      - /app/node_modules
+    ports:
+      - "3001:3001"   # Express + BullBoard
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7
+    container_name: redis-dev
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly no --save "" # remove persistence; DB starts fresh upon rerun
 
   # The Database
   mongo:
@@ -58,3 +80,4 @@ services:
 
 volumes:
   mongo-data:
+  redis_data:

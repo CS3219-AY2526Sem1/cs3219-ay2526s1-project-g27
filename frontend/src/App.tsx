@@ -2,17 +2,20 @@ import { type FC } from 'react';
 import AppRouter from '@/routes';
 import { BrowserRouter } from 'react-router-dom'; 
 import { AuthProvider } from '@/context/AuthContext.tsx';
-import NavBar from '@/components/NavBar.tsx';
-import ErrorBoundary from '@/components/error-boundary.tsx'; // Recommended for production
+import NavBar from '@/components/common/NavBar';
+import ErrorBoundary from '@/components/ErrorBoundary'; // Recommended for production
+import { MatchingProvider } from './context/MatchContext';
 
 const App: FC = () => {
   return (
     <BrowserRouter> 
       <AuthProvider>
-        <ErrorBoundary>
-          <NavBar />
-          <AppRouter />
-        </ErrorBoundary>
+        <MatchingProvider>
+            <ErrorBoundary>
+              <NavBar />
+              <AppRouter />
+            </ErrorBoundary>
+        </MatchingProvider>
       </AuthProvider>
     </BrowserRouter>
   );

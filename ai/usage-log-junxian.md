@@ -75,3 +75,71 @@ Modification of docker-compose.dev.yml file is suggested
 - [ ] Rejected
 # Author Notes:
 Followed the recommended solution. Tested and works.
+
+# Date / Time:
+2025-10-12 18:00
+# Tool:
+Gemini 2.5 Flash
+# Prompt/Command:
+Advise on how i should be breaking up this code into files. (Provided the entire code of server.js file)
+
+# Output Summary:
+Recommended File Structure
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+# Author Notes:
+Followed the recommended file structure. Modified to avoid circular dependencies.
+
+# Date / Time:
+2025-10-13 12:30
+# Tool:
+ChatGPT 5 
+# Prompt/Command:
+Currently the match page logic is all here in one file (Copied and pasted code of Match.tsx). However, I want the idea that if the user joins the queue (and has not be removed from the queue by the server), it should still reflect that the user is in the queue and cannot join. This function should be present when user navigate to other pages in my application and then back to it. Moreover, i will want to show the timer of the queue as well at any part of the application, not just in the match page. Can you advise on how to go about doing this implementation and what are the resources/documentations to look into?
+
+# Output Summary:
+Recommended files to create and how should the logic be separated. Also provided some backbone code.
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+# Author Notes:
+Followed the recommended files to create and used the backbone of the files (MatchContext.tsx and QueueTimerDisplay.tsx). Tested and works.
+
+# Date / Time:
+2025-10-13 12:30
+# Tool:
+ChatGPT 5 
+# Prompt/Command:
+I want the QueueDisplayTimer to have a button such that there is a cross and I can invoke a function to remove the user from the queue as user request
+
+# Output Summary:
+Recommended UI for the button creation.
+
+# Action Taken:
+- [X] Accepted as-is 
+- [] Modified
+- [ ] Rejected
+# Author Notes:
+Copied the UI into QueueDisplayTime.tsx and works.
+
+# Date / Time:
+2025-10-15 10:00
+# Tool:
+ChatGPT 5 
+# Prompt/Command:
+Recheck after lock failure implementation for processJob function.
+
+# Output Summary:
+Code adjustments to current processJob function.
+
+# Action Taken:
+- [X] Accepted as-is 
+- [] Modified
+- [ ] Rejected
+# Author Notes:
+Tested and works.
