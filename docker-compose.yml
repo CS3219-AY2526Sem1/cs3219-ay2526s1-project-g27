@@ -53,7 +53,7 @@ services:
       dockerfile: Dockerfile
     container_name: matching-service-dev
     volumes:
-      - /matching-service:/app
+      - ./matching-service:/app
       - /app/node_modules
     ports:
       - "3001:3001"   # Express + BullBoard
