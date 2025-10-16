@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { jwt } from "better-auth/plugins"
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { Resend } from 'resend';
@@ -125,6 +126,9 @@ export const auth = betterAuth({
       }
     }
   },
+  plugins: [
+    jwt(),
+  ],
   
   database: mongodbAdapter(db, {})
 });

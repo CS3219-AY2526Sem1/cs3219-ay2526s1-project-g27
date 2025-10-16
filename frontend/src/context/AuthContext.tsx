@@ -1,7 +1,12 @@
-import { createContext, useContext, type ReactNode, type FC } from 'react';
+import { createContext, useContext,  useState, useEffect, type ReactNode, type FC } from 'react';
 import type { User, AuthContextType } from '@/types';
 import { authClient } from '@/lib/auth-client'; 
 
+
+
+export interface CustomAuthContextType extends AuthContextType {
+  jwt: string | null;
+}
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 
@@ -19,12 +24,33 @@ interface AuthProviderProps {
 
 
 export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
+
+  // JSON Web Token for token based auth
+  const [jwt, setJwt] = useState<string | null>(null);
+
   // 1. Manage Session State
   const { data: session, isPending: isLoading, error: sessionError } = authClient.useSession();
 
   if (sessionError) {
     console.error("Error fetching session:", sessionError);
   }
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      if (session) {
+        const {data, error} = await authClient.token();
+        if (error) {
+          console.error("Error fetching JWT", error)
+          setJwt(null);
+        } else if (data) {
+          setJwt(data.token)
+        }
+      } else {
+        setJwt(null);
+      }
+    }
+    fetchToken();
+  }, [session]);
 
   // 2. Map Session to User
   const user: User | null = session?.user ? {
@@ -65,11 +91,13 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     await authClient.signOut();
   };
 
+
   // 6. Provide Values
-  const value: AuthContextType = {
+  const value: CustomAuthContextType = {
     user,
     isAuthenticated,
     isLoading,
+    jwt, 
     login,
     logout,
     signup, // Add signup to the provided value
