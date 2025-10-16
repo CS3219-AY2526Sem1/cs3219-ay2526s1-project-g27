@@ -62,6 +62,18 @@ services:
     depends_on:
       - redis
 
+  collab-service:
+    build:
+      context: ./collab/server
+    container_name: collab-service-dev
+    ports:
+      - "8081:8081"  # Expose Yjs WebSocket server
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+
   redis:
     image: redis:7
     container_name: redis-dev
