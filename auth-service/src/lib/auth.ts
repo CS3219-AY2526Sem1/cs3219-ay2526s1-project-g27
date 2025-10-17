@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { jwt } from "better-auth/plugins"
+import { jwt, openAPI } from "better-auth/plugins"
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { Resend } from 'resend';
@@ -30,6 +30,7 @@ export type User = {
 
 export const auth = betterAuth({
   trustedOrigins: [process.env.FRONTEND_URL as string],
+  baseURL: process.env.FRONTEND_URL as string,
 
   emailAndPassword: {
     enabled: true,
@@ -55,8 +56,10 @@ export const auth = betterAuth({
       user: { email: string; name: string };
       url: string;
     }) => {
+      const frontendUrl = new URL(url);
+      frontendUrl.host = new URL(process.env.FRONTEND_URL as string).host;
       const emailHtml = await render(
-        VerificationEmail({ userName: user.name, verificationUrl: url })
+        VerificationEmail({ userName: user.name,verificationUrl: frontendUrl.toString()})
       );
 
       await resend.emails.send({
@@ -128,6 +131,7 @@ export const auth = betterAuth({
   },
   plugins: [
     jwt(),
+    openAPI(),
   ],
   
   database: mongodbAdapter(db, {})

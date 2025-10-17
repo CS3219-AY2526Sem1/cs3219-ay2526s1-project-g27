@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import {
   Select,
@@ -26,6 +25,8 @@ import { useMatching } from '@/context/MatchContext';
 export default function MatchingPage() {
   const difficulties = ['Easy', 'Medium', 'Hard'];
   const topics = ['Arrays', 'Strings', 'Dynamic Programming', 'Graphs', 'Trees', 'Sorting'];
+
+  //@ts-ignore
   const { isMatching, timer, showError, errorMessage, showAcceptMatch, matchFound, topic, difficulty, setTopic, setDifficulty, startMatching, stopMatching, acceptMatch } = useMatching();
 
   const formatTime = (seconds: number): string => {

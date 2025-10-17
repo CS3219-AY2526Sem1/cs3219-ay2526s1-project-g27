@@ -122,7 +122,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
             handleErrorDisplay(data.message);
         });
         // for both match failed and success events
-        matchingEventSource.addEventListener("terminate", (event) => {
+        matchingEventSource.addEventListener("terminate", () => {
             console.log("close connection");
             matchingEventSource.close();
             setIsMatching(false);

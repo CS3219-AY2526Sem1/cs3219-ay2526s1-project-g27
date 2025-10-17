@@ -1,16 +1,18 @@
 import { createContext, useContext,  useState, useEffect, type ReactNode, type FC } from 'react';
 import type { User, AuthContextType } from '@/types';
 import { authClient } from '@/lib/auth-client'; 
+import { setAuthToken } from '@/api/apiClient';
 
 
 
 export interface CustomAuthContextType extends AuthContextType {
   jwt: string | null;
+  isLoading: boolean;        
 }
-export const AuthContext = createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<CustomAuthContextType | null>(null);
 
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = (): CustomAuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
@@ -36,20 +38,20 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   }
 
   useEffect(() => {
-    const fetchToken = async () => {
-      if (session) {
-        const {data, error} = await authClient.token();
-        if (error) {
-          console.error("Error fetching JWT", error)
+    if (session) {
+      const token = (session as any).token ?? (session as any).session?.token ?? null;
+      if (token) {
+          setJwt(token);
+          setAuthToken(token);
+        } else {
+          console.error("JWT not found on session object");
           setJwt(null);
-        } else if (data) {
-          setJwt(data.token)
+          setAuthToken(null);
         }
-      } else {
-        setJwt(null);
-      }
+    } else {
+      setJwt(null);
+      setAuthToken(null);
     }
-    fetchToken();
   }, [session]);
 
   // 2. Map Session to User
@@ -71,7 +73,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signup = async (credentials: { email: string; password: string; name: string }) => {
-    const frontendUrl = import.meta.env.VITE_FRONTEND_URL;
+    const frontendUrl = import.meta.env.FRONTEND_URL;
 
     const result = await authClient.signUp.email({
       email: credentials.email,

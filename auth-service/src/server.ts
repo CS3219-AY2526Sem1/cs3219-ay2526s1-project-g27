@@ -6,10 +6,28 @@ import { auth } from "./lib/auth";
 import userRouter from "./routes/route";
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT: number = process.env.AUTH_PORT ? parseInt(process.env.AUTH_PORT, 10) : 8000;
+const allowedOrigins = ['http://localhost:5173', 'http://localhost'];
 
-const corsOptions = {
-  origin: 'http://localhost:5173',
+interface CorsOriginCallback {
+  (err: Error | null, allow?: boolean): void;
+}
+
+interface CustomCorsOptions {
+  origin: (origin: string | null | undefined, callback: CorsOriginCallback) => void;
+  credentials: boolean;
+}
+
+const corsOptions: CustomCorsOptions = {
+  origin: function (origin: string | null | undefined, callback: CorsOriginCallback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
 };
 
@@ -40,7 +58,7 @@ async function startServer() {
     // Connect to MongoDB for profile service
     await connectToDatabase();
 
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`API available at http://localhost:${PORT}/api/v1`);
       console.log(`Auth endpoints at http://localhost:${PORT}/api/auth`);
