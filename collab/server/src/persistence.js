@@ -10,9 +10,9 @@ Author review:
 import { MongoClient } from 'mongodb'
 import * as Y from 'yjs'
 
-const MONGO_URL = process.env.MONGO_URL || 'mongodb://persistence:27017'
-const DB_NAME = process.env.MONGO_DB_NAME || 'yjs-docs'
-const COLLECTION_NAME = 'documents'
+const MONGO_URL = process.env.DB_LOCAL_URI || 'mongodb://persistence:27017'
+const DB_NAME = process.env.YJS_DB_NAME || 'yjs-docs'
+const COLLECTION_NAME = process.env.YJS_COLLECTION_NAME || 'documents'
 let db = null
 let collection = null
 

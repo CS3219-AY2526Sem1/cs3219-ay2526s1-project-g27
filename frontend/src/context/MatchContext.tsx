@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import apiClient from "@/api/apiClient";        
 import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface MatchingContextType {
     isMatching: boolean;
@@ -36,6 +37,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
     const { user, jwt } = useAuth(); 
     const userId = user?.id;
 
+    const navigate = useNavigate();
     useEffect(() => {
         let interval: NodeJS.Timeout | undefined;
         if (isMatching) {
@@ -121,6 +123,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
             }
             console.log("matched user", matchedUser);
             // TODO: add redirection to collaboration page
+            navigate(`/collab?match=${data.signedData}&user=${userId}`)
             setTimeout(() => {
                 resetMatchState();
             }, 5000)

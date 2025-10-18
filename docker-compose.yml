@@ -95,6 +95,19 @@ services:
       - redis
     restart: unless-stopped
 
+  # Collab Service
+  collab-service:
+    build:
+      context: ./collab/server
+    container_name: collab-service-dev
+    ports:
+      - "8081:8081"  # Expose Yjs WebSocket server
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+
   # Redis
   redis:
     image: redis:7-alpine

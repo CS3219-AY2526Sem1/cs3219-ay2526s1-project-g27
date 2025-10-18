@@ -18,10 +18,12 @@ import http from 'http'
 import * as number from 'lib0/number'
 import { setupWSConnection, setPersistence } from './utils.js'
 import { mongoPersistence } from './persistence.js'
+import url from 'url';
+import jwt from 'jsonwebtoken'; // assuming you use jsonwebtoken lib
 
 const wss = new WebSocket.Server({ noServer: true })
-const host = process.env.HOST || '0.0.0.0'
-const port = number.parseInt(process.env.PORT || '8081')
+const host = process.env.COLLAB_HOST || '0.0.0.0'
+const port = number.parseInt(process.env.COLLAB_HOST || '8081')
 
 setPersistence(mongoPersistence)
 
@@ -43,9 +45,10 @@ wss.on('connection', (conn, req) => {
   console.log('Room:', room);
 
   // When client disconnects
-  conn.on('close', () => {
+  conn.on('close', (code, reason) => {
     console.log('Client disconnected');
     console.log('Total connections:', wss.clients.size);
+    console.log(`Code: ${code}, Reason: ${reason}`);
   });
 
   // Hand off to the default Yjs handler
@@ -62,10 +65,35 @@ server.on('upgrade', (request, socket, head) => {
   // (e.g. by checking cookies, or url parameters).
   // See https://github.com/websockets/ws#client-authentication
 
-  console.log(request);
-  
-  wss.handleUpgrade(request, socket, head, /** @param {any} ws */ ws => {
-    wss.emit('connection', ws, request)
+  // console.log(request);
+  // console.log(head);
+  if (!request.url) {
+    socket.destroy();
+    return;
+  }
+  const { pathname, query } = url.parse(request.url, true);
+  const token = pathname?.substring(1)
+  const userId = query.userId;
+
+  // Verify JWT token
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      console.log('Auth failed during upgrade:', err.message);
+      // Reject connection
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+    console.log(`Received token: ${JSON.stringify(decoded)}`);
+    // Verify user with userId, userId jwt, match jwt
+    if (userId != decoded.userA && userId != decoded.userB){
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(request, socket, head, /** @param {any} ws */ ws => {
+      wss.emit('connection', ws, request)
+    })
   })
 })
 
