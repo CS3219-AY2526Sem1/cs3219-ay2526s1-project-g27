@@ -4,10 +4,11 @@ import { toNodeHandler } from "better-auth/node";
 import {closeDatabase, connectToDatabase } from "./lib/db";
 import { auth } from "./lib/auth";
 import userRouter from "./routes/route";
+import authRouter from "./routes/authroute";
 
 const app = express();
 const PORT: number = process.env.AUTH_PORT ? parseInt(process.env.AUTH_PORT, 10) : 8000;
-const allowedOrigins = ['http://localhost:5173', 'http://localhost'];
+const allowedOrigins = ['http://localhost:5173', 'http://localhost', 'http://localhost:80'];
 
 interface CorsOriginCallback {
   (err: Error | null, allow?: boolean): void;
@@ -38,6 +39,8 @@ app.all('/api/auth/{*any}', toNodeHandler(auth));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use("/api/v1/users", userRouter);
+app.use("/api/jwt", authRouter); 
+
 
 
 app.get("/health", (req: express.Request, res: express.Response) => {

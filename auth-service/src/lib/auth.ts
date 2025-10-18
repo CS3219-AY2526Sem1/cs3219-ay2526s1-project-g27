@@ -29,8 +29,8 @@ export type User = {
 
 
 export const auth = betterAuth({
-  trustedOrigins: [process.env.FRONTEND_URL as string],
-  baseURL: process.env.FRONTEND_URL as string,
+  trustedOrigins: [process.env.FRONTEND_URL as string, process.env.BASE_URL as string, 'http://localhost:5173'],
+  baseURL: process.env.AUTH_SERVICE_BASE_URL || "http://auth-service:8000", 
 
   emailAndPassword: {
     enabled: true,
@@ -130,7 +130,13 @@ export const auth = betterAuth({
     }
   },
   plugins: [
-    jwt(),
+    jwt({
+      jwt: {
+        issuer: process.env.AUTH_SERVICE_BASE_URL || "http://auth-service:8000",
+        audience: process.env.AUTH_SERVICE_BASE_URL || "http://auth-service:8000",
+        expirationTime: "30m"
+      }
+    }),
     openAPI(),
   ],
   

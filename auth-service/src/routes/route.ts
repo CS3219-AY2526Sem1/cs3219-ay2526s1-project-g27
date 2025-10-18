@@ -8,6 +8,8 @@ const userRouter = Router();
 // GET /api/v1/users - List all users (public with optional auth for filtering)
 userRouter.get("/", optionalAuth, ProfileController.getAllProfiles);
 
+
+
 // Protected routes - require authentication and ownership
 // GET /api/v1/users/:id/profile - Get user profile (protected)
 userRouter.get("/:id/profile", requireAuth, requireOwnership, ProfileController.getProfile);

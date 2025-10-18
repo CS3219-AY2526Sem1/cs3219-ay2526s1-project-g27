@@ -140,3 +140,23 @@ Ask Gemini to generate code for such a gateway using express and docker.
 |                                                            +--------------------------+          |
 |                                                                                                  |
 +--------------------------------------------------------------------------------------------------+
+
+
+
+# Date / Time:
+25-9-2025 to 8-10-2025
+# Tool:
+ChatGPT 5 / Claude Sonnet 4.5 / Gemini Pro 2.5
+
+# Prompt / Command / Description:
+Asked for Ngnix configuration instead since gateway showing alot of problems, its basically trying to build a reverse proxy from scratch. So idea is we can simplify it and use existing open source solution
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+
+# Author Notes:
+Modifying it to tailor to our own service and settings. This include adding to SSE and adding authorization headers.
+Decided to also host react on the ngnix and serve it instead of separating out.
+

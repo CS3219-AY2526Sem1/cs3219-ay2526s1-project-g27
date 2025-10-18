@@ -1,16 +1,15 @@
-import { createContext, useContext,  useState, useEffect, type ReactNode, type FC } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode, type FC } from 'react';
 import type { User, AuthContextType } from '@/types';
 import { authClient } from '@/lib/auth-client'; 
 import { setAuthToken } from '@/api/apiClient';
 
-
-
 export interface CustomAuthContextType extends AuthContextType {
   jwt: string | null;
-  isLoading: boolean;        
+  isLoading: boolean;
+  refreshJwt: () => Promise<void>;
 }
-export const AuthContext = createContext<CustomAuthContextType | null>(null);
 
+export const AuthContext = createContext<CustomAuthContextType | null>(null);
 
 export const useAuth = (): CustomAuthContextType => {
   const context = useContext(AuthContext);
@@ -24,9 +23,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-
 export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
-
   // JSON Web Token for token based auth
   const [jwt, setJwt] = useState<string | null>(null);
 
@@ -37,24 +34,56 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     console.error("Error fetching session:", sessionError);
   }
 
+  // 2. Fetch JWT token when session is available
+  const fetchJwtToken = async () => {
+    if (!session?.user) {
+      console.log('No session available, clearing JWT');
+      setJwt(null);
+      setAuthToken(null);
+      return;
+    }
+
+    try {
+      console.log('🔑 Fetching JWT token using authClient.token()...');
+      
+      // CORRECT WAY: Use the token() method from jwtClient plugin
+      const { data, error } = await authClient.token();
+      
+      if (error) {
+        console.error('❌ Error fetching JWT token:', error);
+        setJwt(null);
+        setAuthToken(null);
+        return;
+      }
+
+      if (data?.token) {
+        console.log('✅ JWT token obtained successfully');
+        console.log('🔑 Token prefix:', data.token.substring(0, 20) + '...');
+        setJwt(data.token);
+        setAuthToken(data.token);
+      } else {
+        console.warn('❌ No token in response');
+        setJwt(null);
+        setAuthToken(null);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching JWT token:', error);
+      setJwt(null);
+      setAuthToken(null);
+    }
+  };
+
+  // Fetch JWT when session changes
   useEffect(() => {
-    if (session) {
-      const token = (session as any).token ?? (session as any).session?.token ?? null;
-      if (token) {
-          setJwt(token);
-          setAuthToken(token);
-        } else {
-          console.error("JWT not found on session object");
-          setJwt(null);
-          setAuthToken(null);
-        }
+    if (session?.user) {
+      fetchJwtToken();
     } else {
       setJwt(null);
       setAuthToken(null);
     }
-  }, [session]);
+  }, [session?.user?.id]); // Only re-fetch when user ID changes
 
-  // 2. Map Session to User
+  // 3. Map Session to User
   const user: User | null = session?.user ? {
     id: session.user.id,
     email: session.user.email,
@@ -63,11 +92,13 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user;
 
-
   const login = async (credentials: { email: string; password: string }) => {
     const result = await authClient.signIn.email(credentials);
     if (result.error) {
       console.error("Login error:", result.error.message);
+    } else {
+      // Fetch JWT after successful login
+      await fetchJwtToken();
     }
     return result; 
   };
@@ -84,6 +115,9 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
     if (result.error) {
       console.error("Signup error:", result.error.message);
+    } else {
+      // Fetch JWT after successful signup
+      await fetchJwtToken();
     }
 
     return result;
@@ -91,10 +125,16 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     await authClient.signOut();
+    setJwt(null);
+    setAuthToken(null);
   };
 
+  // Manual JWT refresh function
+  const refreshJwt = async () => {
+    await fetchJwtToken();
+  };
 
-  // 6. Provide Values
+  // 4. Provide Values
   const value: CustomAuthContextType = {
     user,
     isAuthenticated,
@@ -102,7 +142,8 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     jwt, 
     login,
     logout,
-    signup, // Add signup to the provided value
+    signup,
+    refreshJwt,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

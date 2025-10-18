@@ -77,23 +77,23 @@ services:
     restart: unless-stopped
   
   # Matching Service (uncomment when ready)
-  # matching-service:
-  #   build:
-  #     context: ./matching-service
-  #     dockerfile: Dockerfile
-  #   container_name: matching-service-dev
-  #   volumes:
-  #     - ./matching-service:/app
-  #     - /app/node_modules
-  #   ports:
-  #     - "3001:3001"
-  #   env_file:
-  #     - .env
-  #   networks:
-  #     - leetcode_collab_net
-  #   depends_on:
-  #     - redis
-  #   restart: unless-stopped
+  matching-service:
+    build:
+      context: ./matching-service
+      dockerfile: Dockerfile
+    container_name: matching-service-dev
+    volumes:
+      - ./matching-service:/app
+      - /app/node_modules
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    networks:
+      - leetcode_collab_net
+    depends_on:
+      - redis
+    restart: unless-stopped
 
   # Redis
   redis:
