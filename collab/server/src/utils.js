@@ -8,11 +8,15 @@ import * as map from 'lib0/map'
 
 import * as eventloop from 'lib0/eventloop'
 
+import url from 'url';
+
 import { callbackHandler, isCallbackSet } from './callback.js'
 import { mongoPersistence } from './persistence.js'
 
 const CALLBACK_DEBOUNCE_WAIT = parseInt(process.env.CALLBACK_DEBOUNCE_WAIT || '2000')
 const CALLBACK_DEBOUNCE_MAXWAIT = parseInt(process.env.CALLBACK_DEBOUNCE_MAXWAIT || '10000')
+
+export const ROOM_PREFIX = "room";
 
 const debouncer = eventloop.createDebouncer(CALLBACK_DEBOUNCE_WAIT, CALLBACK_DEBOUNCE_MAXWAIT)
 
@@ -226,11 +230,44 @@ const send = (doc, conn, m) => {
 const pingTimeout = 30000
 
 /**
+ * 
+ * @param {string} pathname
+ * @returns 
+ */
+
+export const extractRoomName = (pathname) => {
+  const extractRoom = new RegExp(`\/${ROOM_PREFIX}\/(.*)`);
+  const match = extractRoom.exec(pathname)
+  console.log(`Extracted Room: ${JSON.stringify(match)}`)
+  if (!match) {
+    console.log(`No matchToken supplied on ${pathname}`)
+    throw new URIError("No Room supplied")
+  }
+  return match[1];
+}
+
+
+/**
  * @param {import('ws').WebSocket} conn
  * @param {import('http').IncomingMessage} req
  * @param {any} opts
  */
-export const setupWSConnection = (conn, req, { docName = (req.url || 'a').slice(1).split('?')[0], gc = true } = {}) => {
+export const setupWSConnection = (conn, req, { gc = true } = {}) => {
+  if (!req.url) {
+    conn.close();
+    return;
+  }
+  const { pathname, query } = url.parse(req.url, true);
+  let docName = "";
+  try {
+    docName = extractRoomName(req.url || 'a').slice(1).split('?')[0]
+  } catch (error) {
+    if (error instanceof URIError) {
+      console.log(`No room supplied on ${pathname}`)
+      conn.close();
+      return;
+    }
+  }
   conn.binaryType = 'arraybuffer'
   // get doc, initialize if it does not exist yet
   const doc = getYDoc(docName, gc)

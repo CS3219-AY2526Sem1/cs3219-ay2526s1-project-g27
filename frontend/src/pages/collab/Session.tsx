@@ -7,21 +7,27 @@ Author review:
 - Verfied for correctness by reading code
 */
 
-
 import { CollaborativeEditor } from "./editor";
-import { useSearchParams } from 'react-router-dom';
+import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function CollaborationPage() {
-    const [searchParams] = useSearchParams();
-    const matchToken = searchParams.get('match');
-    const userId = searchParams.get('user');
+
+    const matchToken = localStorage.getItem('matchToken');
+
+    const { user } = useAuth();
+    const userId = user?.id ? user.id : "";
+    const [language, setLanguage] = useState<"python3" | "cpp" | "javascript">("javascript");
 
 
     if (!matchToken) {
         return <div><p> ERROR! Did not receive a Match Token</p></div>
     }
+    const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setLanguage(event.target.value as "python3" | "cpp" | "javascript");
+    };
+
     return (
-        
         <div className="flex h-screen">
             {/* ADD THE QUESTION ON THE SIDE*/}
             <div className="flex-1 border-r border-gray-300 p-6">
@@ -31,8 +37,14 @@ export default function CollaborationPage() {
 
             {/* Collab col */}
             <div className="flex-2 p-6">
-                <CollaborativeEditor matchJwt={matchToken} userId={userId} />
+                <CollaborativeEditor matchToken={matchToken} userId={userId} language={language}/>
             </div>
+            <select id="dropdown" value={language} onChange={handleLanguageChange}>
+                <option value="">--Please choose--</option>
+                <option value="python3">Python 3</option>
+                <option value="cpp">C++</option>
+                <option value="javascript">Javascript</option>
+            </select>
         </div>
-    )
+    );
 }
