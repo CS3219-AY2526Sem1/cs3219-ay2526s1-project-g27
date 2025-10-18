@@ -75,7 +75,7 @@ Generate the docker compose file for the server and client
 
 ## Output Summary:
 Template code for 
-- `docker-compose.yml`
+- `collab/docker-compose.yml`
 
 Additionally, it also generated instructions for running docker-compose
 
@@ -96,7 +96,7 @@ setup a simple websocket server with YJS as a CRDT to simply receive and emit ch
 
 ## Output Summary:
 Template code for 
-- `server/server.js`
+- `collab/server/server.js`
 
 Additionally, it also generated instructions for project setup
 
@@ -118,7 +118,7 @@ Create a persistence adapter for mongodb
 
 ## Output Summary:
 Code for 
-- `server/persistence.js`
+- `collab/server/persistence.js`
 
 ## Action Taken:
 - [X] Accepted as-is
@@ -154,10 +154,10 @@ Expanded the above callback to include logging
 ChatGPT
 ## Prompt/Command:
 App.tsx
-\<Copy and pasted ./client/App.tsx\>
+\<Copy and pasted ./collab/client/App.tsx\>
 
 editor.tsx
-\<Copy and pastede ./client/editor.tsx\>
+\<Copy and pastede ./collab/client/editor.tsx\>
 add roomID input field and a connect button to App.tsx and make the editor use the roomID to connect to the specified room
 
 ## Output Summary:
@@ -169,3 +169,23 @@ Added the buttons and roomID field to editor. Editted editor code to use the roo
 - [ ] Rejected
 ## Author Notes:
 - Verified by testing code
+
+## Date/Time:
+2025-10-16 22:00
+## Tool:
+ChatGPT
+## Prompt/Command:
+using tailwind, let this component be on the right of a 2-column div (create the div too) \<CollaborativeEditor roomID={matchToken} />
+
+
+## Output Summary:
+HTML elements, styled using tailwind to give the content requested
+
+
+## Action Taken:
+- [X] Accepted as-is
+- [ ] Modified
+- [ ] Rejected
+## Author Notes:
+- Verified by reading code
+- Integrated the HTML into `./frontend/src/pages/collab/Session` to give the page basic structure

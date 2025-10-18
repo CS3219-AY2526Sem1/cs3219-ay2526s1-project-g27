@@ -124,6 +124,7 @@ export class WSSharedDoc extends Y.Doc {
     this.on('update', /** @type {any} */ (updateHandler))
     if (isCallbackSet) {
       this.on('update', (_update, _origin, doc) => {
+        console.log(`Update from ${origin}`)
         debouncer(() => callbackHandler(/** @type {WSSharedDoc} */ (doc)))
       })
     }
