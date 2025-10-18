@@ -21,7 +21,10 @@ export default defineConfig({
     host: true,
     open: false,
     proxy: {
-      '/api': 'http://auth-service:8000',
+      '/api': {
+        target: process.env.GATEWAY_SERVICE_TARGET,
+        changeOrigin: true,
+      }
     },
     watch : {
       usePolling: true,

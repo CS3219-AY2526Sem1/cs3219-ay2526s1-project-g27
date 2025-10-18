@@ -1,18 +1,13 @@
-import { type FC, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { type FC } from 'react';
 import { useAuth } from '@/context/AuthContext'
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 
-interface User {
-  id: string;
-  email: string;
-  username?: string; // username is optional
-}
+
 
 
 const HomePage: FC = () => {
-  const { user, logout } = useAuth();
+  const { user, jwt, logout } = useAuth();
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-50 px-4">
@@ -46,6 +41,10 @@ const HomePage: FC = () => {
             <div className="flex justify-between border-b pb-2">
               <span className="font-semibold text-gray-700">Authenticated:</span>
               <span className="text-green-600 font-medium">Yes ✅</span>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="font-semibold text-gray-700">Json Web Token:</span>
+              <span className="text-green-600 font-medium">{jwt}</span>
             </div>
           </div>
         </CardContent>
