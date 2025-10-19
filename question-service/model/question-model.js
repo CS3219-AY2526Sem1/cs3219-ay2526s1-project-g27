@@ -3,11 +3,6 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const QuestionModelSchema = new Schema({
-  questionId: {
-    type: Number,
-    required: true,
-    unique: true,
-  },
   QuestionTitle: {
     type: String,
     required: true,
