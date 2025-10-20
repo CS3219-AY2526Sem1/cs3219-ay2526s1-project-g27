@@ -8,7 +8,7 @@ Author review:
 */
 
 
-import { CollaborativeEditor } from '@/components/collab/editor';
+import { CollaborativeEditor } from '@/components/collab/Editor';
 import { useSearchParams } from 'react-router-dom';
 
 export default function CollaborationPage() {
