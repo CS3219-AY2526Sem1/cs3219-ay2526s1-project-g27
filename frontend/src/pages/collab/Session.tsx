@@ -7,16 +7,12 @@ Author review:
 - Verfied for correctness by reading code
 */
 
-import { CollaborativeEditor } from "./editor";
+import { CollaborativeEditor } from "@/components/editor";
 import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
 
 export default function CollaborationPage() {
 
     const matchToken = localStorage.getItem('matchToken');
-
-    const { user } = useAuth();
-    const userId = user?.id ? user.id : "";
     const [language, setLanguage] = useState<"python3" | "cpp" | "javascript">("javascript");
 
 
@@ -37,7 +33,7 @@ export default function CollaborationPage() {
 
             {/* Collab col */}
             <div className="flex-2 p-6">
-                <CollaborativeEditor matchToken={matchToken} userId={userId} language={language}/>
+                <CollaborativeEditor matchToken={matchToken} language={language}/>
             </div>
             <select id="dropdown" value={language} onChange={handleLanguageChange}>
                 <option value="">--Please choose--</option>

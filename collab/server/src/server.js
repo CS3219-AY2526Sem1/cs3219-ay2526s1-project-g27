@@ -22,6 +22,9 @@ import url from 'url';
 import jwt from 'jsonwebtoken'; // assuming you use jsonwebtoken lib
 import express from 'express';
 import IORedis from 'ioredis';
+import path from 'path';
+import { match } from 'assert';
+import axios from 'axios';
 
 const wss = new WebSocket.Server({ noServer: true });
 const host = process.env.COLLAB_HOST || '0.0.0.0';
@@ -32,7 +35,6 @@ const redisOptions = {
     maxRetriesPerRequest: null
 };
 
-
 setPersistence(mongoPersistence);
 
 const app = express();
@@ -40,17 +42,84 @@ const redis = new IORedis(redisOptions);
 
 const server = http.createServer(app);
 
-wss.on('connection', (conn, req) => {
-  // Print total open connections
-  console.log('Client connected');
-  console.log('Total connections:', wss.clients.size);
+/** 
+ * @type {Map<string, string[]>} 
+ */
+const roomConnections = new Map();
 
+wss.on('connection', (conn, req) => {
   // When client disconnects
   conn.on('close', (code, reason) => {
     console.log('Client disconnected');
     console.log('Total connections:', wss.clients.size);
     console.log(`Code: ${code}, Reason: ${reason}`);
+    if (req.url == undefined) {
+      console.log("Invalid connection with undefined URL being closed");
+      return;
+    }
+    const { pathname, query } = url.parse(req.url, true);
+    if (!pathname || !query || !query.userId || !(typeof query.userId == "string") ) {
+      console.log("Invalid connection being closed");
+      return;
+    }
+    const matchToken = extractRoomName(pathname);
+    if (!roomConnections.has(matchToken)) {
+      console.log("Unrecorded connection being closed");
+      return;
+    }
+    const userList = roomConnections.get(matchToken);
+    if (userList == undefined) {
+      console.log("User List is undefined");
+      return;
+    }
+    const indexToRemove = userList.indexOf(query.userId);
+    userList.splice(indexToRemove,1);
+    console.log(`Remaining users in room: ${JSON.stringify(userList)}`);
+    if (userList.length == 1) {
+      // Tell the other user 
+      console.log(`Only 1 user remaining in room ${matchToken}`);
+    }
+    if (userList.length == 0) {
+      stopMatch(matchToken);
+    }
+    return;
+
   });
+  if (!req.url) {
+    console.log("Empty url supplied");
+    conn.close();
+    return;
+  }
+  const { pathname, query } = url.parse(req.url, true);
+  if (!pathname) {
+    console.log("Connection is missing pathname")
+    conn.close();
+    return;
+  }
+  if (!query) {
+    console.log("Connection is missing query")
+    conn.close();
+    return;
+  }
+  const matchToken = extractRoomName(pathname);
+  if (! (typeof query.userId == "string")) {
+    console.log(`userId is of wrong type. Expected <string>, instead received: ${typeof query.userId}`);
+    return;
+  }
+  if (roomConnections.has(matchToken)) {
+    const userList = roomConnections.get(matchToken);
+    if (userList == undefined) {
+      console.log("User List is undefined");
+      return;
+    }
+    
+    userList.push(query.userId);
+  } else {
+    roomConnections.set(matchToken, [query.userId]);
+  }
+  // Print total open connections
+  console.log('Client connected');
+  console.log('Total connections:', wss.clients.size);
 
   // Hand off to the default Yjs handler
   setupWSConnection(conn, req);
@@ -170,7 +239,6 @@ app.post('/match/start/:jwt', async (req, res) => {
 
 app.get('/match/status/:jwt', async (req, res) => {
   const token = req.params.jwt;
-
   try {
     const data = await redis.get(`match:${token}`);
 
@@ -187,22 +255,33 @@ app.get('/match/status/:jwt', async (req, res) => {
 app.post('/match/stop/:jwt', async (req, res) => {
   const matchToken = req.params.jwt;
   try {
+    stopMatch(matchToken);
+    return res.json({ success: true, matchId: matchToken });
+  } catch (error) {
+    if (error instanceof URIError) {
+      return res.status(400).json({ error: 'Invalid matchToken' });
+    }
+    console.error(error);
+    return res.status(500).json({ error: 'Server error' });
+  }    
+})
+
+const stopMatch = (matchToken) => {
+    try {
     // Verify JWT token
     jwt.verify(matchToken, process.env.JWT_SECRET, async (err, decoded) => {
       if (err) {
         console.log('Auth failed during match end:', err.message);
         // Reject connection
-        return res.status(400).json({ error: 'Invalid matchToken' });
+        throw URIError("Invalid matchToken");
       }
       await redis.del(`match:${matchToken}`);
-      return res.json({ success: true, matchId: matchToken });
+      console.log(`Successfully stoped match with id ${matchToken}`);
     })
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    throw Error("Server error when stopping match")
   }
-})
-
+}
 
 server.listen(port, host, () => {
   console.log(`running at '${host}' on port ${port}`)

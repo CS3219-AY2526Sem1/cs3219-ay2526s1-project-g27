@@ -29,6 +29,7 @@ import { keymap } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
 import * as random from 'lib0/random';
 import { Compartment } from '@codemirror/state';
+import { useAuth } from '@/context/AuthContext';
 
 const COLLAB_HOST = import.meta.env.COLLAB_HOST || 'ws://localhost';
 const COLLAB_PORT = import.meta.env.COLLAB_PORT || '8081';
@@ -50,14 +51,11 @@ export const userColour = USERCOLOURS[random.uint32() % USERCOLOURS.length]
 
 interface CollaborativeEditorProps {
   matchToken: string;
-  userId: string | null;
   language: "python3" | "cpp" | "javascript";
   // Add user JWT auth token later
 }
 
-
-
-export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({matchToken, userId })  => {
+export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchToken })  => {
   const editorRef = useRef<HTMLDivElement>(null);
   const ydocRef = useRef<Y.Doc>(null);
   const providerRef = useRef<WebsocketProvider>(null);
@@ -65,6 +63,11 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({matchTo
   const editableCompartment = useRef(new Compartment());
   const [language, setLanguage] = useState<string>('python3');
 
+  const { user }= useAuth();
+  if (!user) {
+    console.log("No AUth token");
+    return;
+  }
   const TIMEOUT_DELAY = 3000;
   const timeoutRef = useRef<NodeJS.Timeout|null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'shortDisconnect' | 'connected'>('connected');
@@ -84,7 +87,7 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({matchTo
     }
   };
 
-  useEffect(() => {
+  useEffect(() => { //Handle language change
     var languageLintExtension = javascript;
 
     switch(language) {
@@ -106,9 +109,8 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({matchTo
     }
     
     const ydoc = new Y.Doc();
-    // Might want to extract roomID from JWT instead of using JWT as roomID
-    console.log(`Connecting to ${WEBSOCKET_ENDPOINT}/${matchToken}?userId=${userId}`)
-    const provider = new WebsocketProvider(WEBSOCKET_ENDPOINT, matchToken, ydoc, {params: {userId: userId || 'Anonymous ' + Math.floor(Math.random() * 100)}});
+    console.log(`Connecting to ${WEBSOCKET_ENDPOINT}/${matchToken}?userId=${user.id}`)
+    const provider = new WebsocketProvider(WEBSOCKET_ENDPOINT, matchToken, ydoc, {params: {userId: user.id || 'Anonymous ' + Math.floor(Math.random() * 100)}});
     
     provider.ws?.addEventListener('close', event => {
       console.log('WebSocket closed:', event.code, event.reason);
@@ -116,13 +118,23 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({matchTo
         localStorage.removeItem("matchToken");
       }
     });
+
+    // Last user
+    provider.ws?.addEventListener('lastUser', event => {
+      console.log('You are the last user');
+    });
+
+    // Match ended
+    provider.ws?.addEventListener('end', event => {
+      console.log('You are the last user');
+    });
   
     provider.on('status', (event) => {
       handleWebsocketStatusChange(event.status);
     });
 
     provider.awareness.setLocalStateField('user', {
-      name: userId,
+      name: user.username,
       color: userColour.color,
       colorLight: userColour.light
     });
@@ -153,7 +165,7 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({matchTo
     };
   }, [matchToken, language]);
   
-  useEffect( () => {
+  useEffect( () => { // Handle disconnects
     // Dispatch readonly
     if (editorViewRef.current && editableCompartment.current) {
       editorViewRef.current.dispatch({
