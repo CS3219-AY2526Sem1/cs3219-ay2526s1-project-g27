@@ -10,7 +10,7 @@ Author review:
 import { useState } from "react";
 
 import { CollaborativeEditor } from '@/components/collab/Editor';
-import { useSearchParams } from 'react-router-dom';
+
 
 export default function CollaborationPage() {
 
