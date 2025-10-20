@@ -105,8 +105,11 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    networks:
+      - leetcode_collab_net
     depends_on:
       - mongo
+    
 
   # Redis
   redis:

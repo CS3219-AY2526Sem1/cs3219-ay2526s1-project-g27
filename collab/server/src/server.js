@@ -18,8 +18,7 @@ import http from 'http'
 import * as number from 'lib0/number'
 import { setupWSConnection, setPersistence } from './utils.js'
 import { mongoPersistence } from './persistence.js'
-import url from 'url';
-import jwt from 'jsonwebtoken'; // assuming you use jsonwebtoken lib
+
 
 const wss = new WebSocket.Server({ noServer: true })
 const host = process.env.COLLAB_HOST || '0.0.0.0'
@@ -67,35 +66,17 @@ server.on('upgrade', (request, socket, head) => {
 
   // console.log(request);
   // console.log(head);
-  if (!request.url) {
-    socket.destroy();
-    return;
-  }
-  const { pathname, query } = url.parse(request.url, true);
-  const token = pathname?.substring(1)
-  const userId = query.userId;
+  // Authentication is now handled by the Nginx gateway via `auth_request`.
+  // If the request reaches this point, we assume it is authenticated.
+  // We no longer need to verify a JWT here.
 
-  // Verify JWT token
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      console.log('Auth failed during upgrade:', err.message);
-      // Reject connection
-      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-      socket.destroy();
-      return;
-    }
-    console.log(`Received token: ${JSON.stringify(decoded)}`);
-    // Verify user with userId, userId jwt, match jwt
-    if (userId != decoded.userA && userId != decoded.userB){
-      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-      socket.destroy();
-      return;
-    }
-    wss.handleUpgrade(request, socket, head, /** @param {any} ws */ ws => {
-      wss.emit('connection', ws, request)
-    })
-  })
-})
+  // The primary job is to hand off the connection to the WebSocket server.
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    // The 'ws' object is the established WebSocket connection.
+    // The 'request' object contains the original upgrade request details (like the URL).
+    wss.emit('connection', ws, request);
+  });
+});
 
 server.listen(port, host, () => {
   console.log(`running at '${host}' on port ${port}`)
