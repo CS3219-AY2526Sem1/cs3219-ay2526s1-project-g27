@@ -46,7 +46,7 @@ export default function MatchingPage() {
             </SelectTrigger>
             <SelectContent>
               {difficulties.map((level) => (
-                <SelectItem key={level} value={level} className="text-lg">
+                <SelectItem key={level} value={level} className="text-lg bg-white bg-opacity-100">
                   {level}
                 </SelectItem>
               ))}
@@ -60,7 +60,7 @@ export default function MatchingPage() {
             </SelectTrigger>
             <SelectContent>
               {topics.map((t) => (
-                <SelectItem key={t} value={t} className="text-lg">
+                <SelectItem key={t} value={t} className="text-lg bg-white bg-opacity-100">
                   {t}
                 </SelectItem>
               ))}

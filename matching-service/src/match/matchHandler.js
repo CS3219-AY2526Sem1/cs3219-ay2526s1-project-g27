@@ -3,6 +3,7 @@ const { redisDB } = require('../config/redis');
 const { handleDisconnect } = require('../sse/disconnectHandler');
 const { SSEClientConnections } = require('../sse/SSEClientConnection');
 const jwt = require("jsonwebtoken");
+const axios = require("axios");
 require('dotenv').config();
 
 const requeueUser = async(userData) => {
@@ -145,6 +146,11 @@ const finalizeMatch = async(matchId, data, matchingQueue) => {
         SSEClientBConnection.close();
     }
     await redisDB.del(matchId);
+    const MATCH_START_ENDPOINT = process.env.COLLAB_URL + `/match/start/${signedData}`;
+    axios.post(MATCH_START_ENDPOINT).catch((error) => {
+        console.log(error);
+    });;
+    console.log(`Posted match start request to ${MATCH_START_ENDPOINT}`)
     const isMatchDeleted = await redisDB.exists(matchId) < 1 ? true : false;
     console.log('is delete successful', isMatchDeleted);
 }

@@ -11,44 +11,115 @@ Author review:
 // Env variables required:
 // - HOST
 // - PORT
-
+// app.get('/user/status/:userId', (req, res) => { //req.param.userId //get from redis }) app.post('/match/start/:jwt', (req, res) => { //req.param.jwt //send to redis }) app.get('/match/status/:jwt', (req, res) => { //req.param.jwt //get from redis }) in redis, the key value stored is {match_id: [user_ids]}. Help to fill in the functions. use ioredis
 
 import WebSocket from 'ws'
 import http from 'http'
 import * as number from 'lib0/number'
-import { setupWSConnection, setPersistence } from './utils.js'
+import { setupWSConnection, setPersistence, ROOM_PREFIX, extractRoomName} from './utils.js'
 import { mongoPersistence } from './persistence.js'
+import url from 'url';
+import jwt from 'jsonwebtoken'; // assuming you use jsonwebtoken lib
+import express from 'express';
+import IORedis from 'ioredis';
+import path from 'path';
+import { match } from 'assert';
+import axios from 'axios';
 
+const wss = new WebSocket.Server({ noServer: true });
+const host = process.env.COLLAB_HOST || '0.0.0.0';
+const port = number.parseInt(process.env.COLLAB_HOST || '8081');
+const redisOptions = {
+    host: process.env.REDIS_HOST,
+    port: Number(process.env.REDIS_PORT),
+    maxRetriesPerRequest: null
+};
 
-const wss = new WebSocket.Server({ noServer: true })
-const host = process.env.COLLAB_HOST || '0.0.0.0'
-const port = number.parseInt(process.env.COLLAB_HOST || '8081')
+setPersistence(mongoPersistence);
 
-setPersistence(mongoPersistence)
+const app = express();
+const redis = new IORedis(redisOptions);
 
-const server = http.createServer((_request, response) => {
-  response.writeHead(200, { 'Content-Type': 'text/plain' })
-  response.end('okay')
-})
+const server = http.createServer(app);
 
-/** setupWSConnection 
- * conn, req, { docName = (req.url || '').slice(1).split('?')[0], gc = true
+/** 
+ * @type {Map<string, string[]>} 
  */
+const roomConnections = new Map();
+
 wss.on('connection', (conn, req) => {
-  // Print total open connections
-  console.log('Client connected');
-  console.log('Total connections:', wss.clients.size);
-
-  // Optional: extract room/document name
-  const room = (req.url || '').slice(1).split('?')[0];
-  console.log('Room:', room);
-
   // When client disconnects
   conn.on('close', (code, reason) => {
     console.log('Client disconnected');
     console.log('Total connections:', wss.clients.size);
     console.log(`Code: ${code}, Reason: ${reason}`);
+    if (req.url == undefined) {
+      console.log("Invalid connection with undefined URL being closed");
+      return;
+    }
+    const { pathname, query } = url.parse(req.url, true);
+    if (!pathname || !query || !query.userId || !(typeof query.userId == "string") ) {
+      console.log("Invalid connection being closed");
+      return;
+    }
+    const matchToken = extractRoomName(pathname);
+    if (!roomConnections.has(matchToken)) {
+      console.log("Unrecorded connection being closed");
+      return;
+    }
+    const userList = roomConnections.get(matchToken);
+    if (userList == undefined) {
+      console.log("User List is undefined");
+      return;
+    }
+    const indexToRemove = userList.indexOf(query.userId);
+    userList.splice(indexToRemove,1);
+    console.log(`Remaining users in room: ${JSON.stringify(userList)}`);
+    if (userList.length == 1) {
+      // Tell the other user 
+      console.log(`Only 1 user remaining in room ${matchToken}`);
+    }
+    if (userList.length == 0) {
+      stopMatch(matchToken);
+    }
+    return;
+
   });
+  if (!req.url) {
+    console.log("Empty url supplied");
+    conn.close();
+    return;
+  }
+  const { pathname, query } = url.parse(req.url, true);
+  if (!pathname) {
+    console.log("Connection is missing pathname")
+    conn.close();
+    return;
+  }
+  if (!query) {
+    console.log("Connection is missing query")
+    conn.close();
+    return;
+  }
+  const matchToken = extractRoomName(pathname);
+  if (! (typeof query.userId == "string")) {
+    console.log(`userId is of wrong type. Expected <string>, instead received: ${typeof query.userId}`);
+    return;
+  }
+  if (roomConnections.has(matchToken)) {
+    const userList = roomConnections.get(matchToken);
+    if (userList == undefined) {
+      console.log("User List is undefined");
+      return;
+    }
+    
+    userList.push(query.userId);
+  } else {
+    roomConnections.set(matchToken, [query.userId]);
+  }
+  // Print total open connections
+  console.log('Client connected');
+  console.log('Total connections:', wss.clients.size);
 
   // Hand off to the default Yjs handler
   setupWSConnection(conn, req);
@@ -59,6 +130,8 @@ wss.on('error', (err) => {
 });
 
 server.on('upgrade', (request, socket, head) => {
+  // Expects ws connections on /room/:jwt?userId=<userId>s
+
   // You may check auth of request here.
   // Call `wss.HandleUpgrade` *after* you checked whether the client has access
   // (e.g. by checking cookies, or url parameters).
@@ -66,17 +139,149 @@ server.on('upgrade', (request, socket, head) => {
 
   // console.log(request);
   // console.log(head);
-  // Authentication is now handled by the Nginx gateway via `auth_request`.
-  // If the request reaches this point, we assume it is authenticated.
-  // We no longer need to verify a JWT here.
+  if (!request.url) {
+    socket.destroy();
+    return;
+  }
+  const { pathname, query } = url.parse(request.url, true);
+  console.log(`Request received on ${pathname}`)
+  const roomCheckRegex = new RegExp(`/${ROOM_PREFIX}/*`);
+  if (pathname === null || !roomCheckRegex.test(pathname)) {
+    console.log(`Invalid ws connection received on ${pathname}`)
+    socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+    socket.destroy();
+    return;
+  }
+  let matchToken = "";
+  try {
+    matchToken = extractRoomName(pathname);
+  } catch (error) {
+    if (error instanceof URIError) {
+      console.log(`No matchToken supplied on ${pathname}`)
+      socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+      socket.destroy();
+      return;
+    } else {
+      throw error;
+    }
+  }
+  const userId = query.userId;
 
-  // The primary job is to hand off the connection to the WebSocket server.
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    // The 'ws' object is the established WebSocket connection.
-    // The 'request' object contains the original upgrade request details (like the URL).
-    wss.emit('connection', ws, request);
-  });
-});
+  // Verify JWT token
+  jwt.verify(matchToken, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      console.log('Auth failed during upgrade:', err.message);
+      // Reject connection
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+    console.log(`Received token: ${JSON.stringify(decoded)}`);
+    // Verify user with userId, userId jwt, match jwt
+    if (userId != decoded.userA && userId != decoded.userB){
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(request, socket, head, /** @param {any} ws */ ws => {
+      wss.emit('connection', ws, request)
+    })
+  })
+})
+
+app.get('/user/status/:userId', async (req, res) => {
+  //get from redis
+  const userId = req.params.userId;
+
+  try {
+    // Get all keys that match "match:*"
+    let cursor = '0';
+    const keys = [];
+    do {
+      const [nextCursor, batch] = await redis.scan(cursor, 'MATCH', 'match:*', 'COUNT', 100);
+      keys.push(...batch);
+      for(const key of keys) {
+        const matchDataString = await redis.get(key)
+        const matchData = matchDataString? JSON.parse(matchDataString) : [];
+        if (matchData.userA === userId || matchData.userB === userId) {
+          const matchId = key.split(':')[1];
+          return res.json({ status: 'in_match', matchId });
+        }
+      }
+      cursor = nextCursor;
+    } while (cursor !== '0');
+    res.json({ status: 'idle' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+})
+
+app.post('/match/start/:jwt', async (req, res) => {
+  const matchToken = req.params.jwt;
+  console.log(`Received Match Start Request for MatchId:${matchToken}`)
+  try {
+    // Verify JWT token
+    jwt.verify(matchToken, process.env.JWT_SECRET, async (err, decoded) => {
+      if (err) {
+        console.log('Auth failed during match start:', err.message);
+        // Reject connection
+        return res.status(400).json({ error: 'Invalid matchToken' });
+      }
+      await redis.set(`match:${matchToken}`, JSON.stringify(decoded));
+      return res.json({ success: true, matchId: matchToken });
+    })
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+})
+
+app.get('/match/status/:jwt', async (req, res) => {
+  const token = req.params.jwt;
+  try {
+    const data = await redis.get(`match:${token}`);
+
+    if (!data) {
+      return res.status(404).json({ error: 'Match not found' });
+    }
+    return res.json({ status: 'in_match', token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+})
+
+app.post('/match/stop/:jwt', async (req, res) => {
+  const matchToken = req.params.jwt;
+  try {
+    stopMatch(matchToken);
+    return res.json({ success: true, matchId: matchToken });
+  } catch (error) {
+    if (error instanceof URIError) {
+      return res.status(400).json({ error: 'Invalid matchToken' });
+    }
+    console.error(error);
+    return res.status(500).json({ error: 'Server error' });
+  }    
+})
+
+const stopMatch = (matchToken) => {
+    try {
+    // Verify JWT token
+    jwt.verify(matchToken, process.env.JWT_SECRET, async (err, decoded) => {
+      if (err) {
+        console.log('Auth failed during match end:', err.message);
+        // Reject connection
+        throw URIError("Invalid matchToken");
+      }
+      await redis.del(`match:${matchToken}`);
+      console.log(`Successfully stoped match with id ${matchToken}`);
+    })
+  } catch (err) {
+    throw Error("Server error when stopping match")
+  }
+}
 
 server.listen(port, host, () => {
   console.log(`running at '${host}' on port ${port}`)
