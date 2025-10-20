@@ -1,0 +1,38 @@
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5) date: 2025‑09‑12
+# Scope: 
+# - Generated template code
+# Author review: 
+# - Removed version
+# - Verfied for correctness by running code
+
+services:
+  server:
+    build:
+      context: ./server
+    container_name: yjs-server
+    ports:
+      - "8081:8081"  # Expose Yjs WebSocket server
+    restart: unless-stopped
+
+  client:
+    build:
+      context: ./client
+    container_name: react-client
+    ports:
+      - "8080:80"  # Serve the built client from nginx
+    depends_on:
+      - server
+    restart: unless-stopped
+  
+  persistence:
+    image: mongo:7
+    container_name: mongo-auth-dev
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
+

@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  matching-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: matching-service-dev
+    command: npm run dev
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - "3001:3001"   # Express + BullBoard
+    environment:
+      - .env
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7
+    container_name: redis-dev
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly no --save "" # remove persistence; DB starts fresh upon rerun
+    # commented out below for now
+    # volumes:
+    #   - redis_data:/data
+
+volumes:
+  redis_data:
