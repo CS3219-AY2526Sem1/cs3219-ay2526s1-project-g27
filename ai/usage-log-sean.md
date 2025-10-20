@@ -75,3 +75,88 @@ For any changes using AI, I do make slight adjustments since often the code migh
 For certain folders like `AuthMiddleware.ts` i might copy wholesale the boiler plate code. Otherwise, there are edits to make it , either in the opinion that the way the code was written by AI was not of a production level or good structure or making some custom adjustment so it fits other folders. 
 
 For the Resend part, i adapted it from the idea of a youtube video featuring resend and betterauth tutorial.
+
+
+
+# Date / Time:
+16-10-2025
+# Tool:
+Gemini Pro 2.5
+
+# Prompt / Command / Description:
+Asked about how we could prevent the need for revalidation by every service to verify that a json web token is valid and possed about a user.
+Then decide to accept a gateway approach. 
+Ask Gemini to generate code for such a gateway using express and docker.
+
+
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+
+# Author Notes:
++--------------------------------------------------------------------------------------------------+
+|                                    Phase 1: Authentication                                       |
+|                                                                                                  |
+| +------------+         (1) Login with credentials         +--------------------------+           |
+| |   Client   | -----------------------------------------> |                          |           |
+| | (Browser)  |                                            |   Auth / User Service    |           |
+| +------------+         (2) Returns signed JWT             |   (Backend Microservice) |           |
+|       ^      | <----------------------------------------- |                          |           |
+|       |      |                                            +--------------------------+           |
+|       |      +-----------------------------------------------------------------------------------+
+|       |
+|  (Holds JWT for                                     +------------------------------------------+
+|  subsequent calls)                                  |               (One-time setup)           |
+|                                                     |                                          |
+|                                                     | (A) Gateway fetches public keys (JWKS)   |
+|                                                     |     and caches them.                     |
+|                                                     |                                          |
++-----------------------------------------------------+------------------------------------------+
+|
+|
++--------------------------------------------------------------------------------------------------+
+|                                  Phase 2: Authenticated API Calls                                |
+|                                                                                                  |
+| +------------+       (3) Request with JWT                  +--------------------------+          |
+| |   Client   | ------------------------------------------> |                          |          |
+| | (Browser)  |       to /api/questions                     |      API Gateway         |          |
+| +------------+                                             |                          |          |
+|       ^      |       (6) Gateway returns response          | (Validates JWT w/        |          |
+|       |      | <-----------------------------------------  |  *cached* public key)    |          |
+|       |      |                                             +------------+-------------+          |
+|       |      |                                                          | (4) If JWT is valid,   |
+|       +------+                                                          |     forward request    |
+|                                                                         v                        |
+|                                                            +--------------------------+          |
+|                                                            |                          |          |
+|                                                            |    Internal Microservices|          |
+|                                                            |    (e.g., Question Svc)  |          |
+|                                                            |                          |          |
+|                                                            |      (5) Service sends   |          |
+|                                                            |          response back   |          |
+|                                                            |                          |          |
+|                                                            +--------------------------+          |
+|                                                                                                  |
++--------------------------------------------------------------------------------------------------+
+
+
+
+# Date / Time:
+25-9-2025 to 8-10-2025
+# Tool:
+ChatGPT 5 / Claude Sonnet 4.5 / Gemini Pro 2.5
+
+# Prompt / Command / Description:
+Asked for Ngnix configuration instead since gateway showing alot of problems, its basically trying to build a reverse proxy from scratch. So idea is we can simplify it and use existing open source solution
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+
+# Author Notes:
+Modifying it to tailor to our own service and settings. This include adding to SSE and adding authorization headers.
+Decided to also host react on the ngnix and serve it instead of separating out.
+

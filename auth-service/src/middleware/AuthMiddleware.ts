@@ -97,3 +97,39 @@ export async function optionalAuth(
     next();
   }
 }
+
+/**
+ * Middleware to check if user has a specific role
+ * Must be used AFTER requireAuth middleware
+ */
+export const requireRole = (allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    try {
+      const userRole = req.user?.role;
+
+      if (!userRole) {
+        res.status(403).json({ 
+          error: 'Forbidden',
+          message: 'No role found for user' 
+        });
+        return;
+      }
+
+      if (!allowedRoles.includes(userRole)) {
+        res.status(403).json({ 
+          error: 'Forbidden',
+          message: `Required role: ${allowedRoles.join(' or ')}` 
+        });
+        return;
+      }
+
+      next();
+    } catch (error) {
+      console.error('Role check error:', error);
+      res.status(500).json({ 
+        error: 'Internal server error',
+        message: 'Failed to verify user role' 
+      });
+    }
+  };
+}

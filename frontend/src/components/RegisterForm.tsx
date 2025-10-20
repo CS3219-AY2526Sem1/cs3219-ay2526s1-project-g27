@@ -1,10 +1,9 @@
-import { useState } from "react"; // 1. Import useState for loading state
-import { useNavigate } from "react-router-dom";
+import { useState } from "react"; 
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAuth } from "@/context/AuthContext"; // 2. Import the useAuth hook
-import { toast } from "sonner"; // 3. Import toast for notifications
+import { useAuth } from "@/context/AuthContext"; 
+import { toast } from "sonner"; 
 
 import { Field, FieldDescription, FieldGroup } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-// Zod schema remains the same - it's already well-defined.
 const formSchema = z
   .object({
     username: z
@@ -27,19 +25,29 @@ const formSchema = z
     email: z.string().email({ message: "Please enter a valid email." }),
     password: z
       .string()
-      .min(6, { message: "Password must be at least 6 characters." })
-      .max(20, { message: "Password must be at most 20 characters." }),
+      .min(8, { message: "Password must be at least 8 characters." }) 
+      .max(20, { message: "Password must be at most 20 characters." })
+      // Enforce character variety using regular expressions
+      .regex(/[A-Z]/, { message: "Must contain at least one uppercase letter." })
+      .regex(/[a-z]/, { message: "Must contain at least one lowercase letter." })
+      .regex(/[0-9]/, { message: "Must contain at least one number." })
+      .regex(/[^A-Za-z0-9]/, { message: "Must contain at least one special character." }),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match.",
     path: ["confirmPassword"],
+  })
+  // Add a new refine check to disallow username in password
+  .refine((data) => !data.password.includes(data.username), {
+    message: "Password cannot contain your username.",
+    path: ["password"],
   });
 
 export default function RegisterForm() {
-  const navigate = useNavigate();
-  const { signup } = useAuth(); // 4. Get the signup function from the context
-  const [isLoading, setIsLoading] = useState(false); // 5. State to manage form submission
+  const { signup } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,9 +70,9 @@ export default function RegisterForm() {
         toast.error(`Sign-up failed: ${error.message}`);
       } else {
         toast.success(
-          "Sign-up successful! Please check your email to verify your account."
+          "Sign-up successful! Please check your email (outside of Outlook) to verify your account."
         );
-        navigate("/"); // TODO: Implement check-email page
+        setIsSuccess(true);
       } 
     } catch (err) {
       console.error("An unexpected error occurred:", err);
@@ -89,7 +97,7 @@ export default function RegisterForm() {
                     type="text"
                     placeholder="yourusername"
                     required
-                    disabled={isLoading} // 9. Disable input when loading
+                    disabled={isLoading || isSuccess}
                     {...field}
                   />
                 </FormControl>
@@ -110,7 +118,7 @@ export default function RegisterForm() {
                     type="email"
                     placeholder="m@example.com"
                     required
-                    disabled={isLoading} // Disable input when loading
+                    disabled={isLoading || isSuccess}
                     {...field}
                   />
                 </FormControl>
@@ -131,7 +139,7 @@ export default function RegisterForm() {
                     type="password"
                     placeholder="Your password"
                     required
-                    disabled={isLoading} // Disable input when loading
+                    disabled={isLoading || isSuccess}
                     {...field}
                   />
                 </FormControl>
@@ -152,7 +160,7 @@ export default function RegisterForm() {
                     type="password"
                     placeholder="Re-enter your password"
                     required
-                    disabled={isLoading} // Disable input when loading
+                    disabled={isLoading || isSuccess}
                     {...field}
                   />
                 </FormControl>
@@ -162,9 +170,14 @@ export default function RegisterForm() {
           />
 
           <Field>
-            {/* 10. Update button state based on isLoading */}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing Up..." : "Sign Up"}
+            <Button type="submit" className="w-full" disabled={isLoading || isSuccess}>
+              {
+                isLoading
+                ? "Signing Up..."
+                : isSuccess
+                ? "Success! Check your email"
+                : "Sign Up"
+              }
             </Button>
 
             <FieldDescription className="text-center">

@@ -26,3 +26,20 @@ export async function findAnyWithDifficultyAndCategory(difficulty, categories) {
 
   return result[0] || null;
 }
+
+export async function findQuestionFromDbById(id) {
+  return await questionModel.findOne({ _id: id });
+}
+
+export async function createQuestion(questionData) {
+  const newQuestion = new questionModel(questionData);
+  return await newQuestion.save();
+}
+
+export async function deleteQuestionById(id) {
+  return await questionModel.deleteOne({ _id: id });
+}
+
+export async function updateQuestionById(id, updateData) {
+  return await questionModel.updateOne({ _id: id }, { $set: updateData });
+}

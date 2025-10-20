@@ -7,14 +7,15 @@ Author review:
 - Verfied for correctness by reading code
 */
 
-import { CollaborativeEditor } from "@/components/editor";
 import { useState } from "react";
+
+import { CollaborativeEditor } from '@/components/collab/Editor';
+import { useSearchParams } from 'react-router-dom';
 
 export default function CollaborationPage() {
 
     const matchToken = localStorage.getItem('matchToken');
     const [language, setLanguage] = useState<"python3" | "cpp" | "javascript">("javascript");
-
 
     if (!matchToken) {
         return <div><p> ERROR! Did not receive a Match Token</p></div>

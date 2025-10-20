@@ -1,39 +1,65 @@
 services:
-  # The Backend Authentication Service
+  # Nginx Gateway - Serves frontend and proxies API requests
+  nginx-gateway:
+    build:
+      context: .
+      dockerfile: ./nginx-gateway/Dockerfile
+    container_name: nginx-gateway-dev
+    ports:
+      - "80:80" 
+    volumes:
+      - ./logs/nginx:/var/log/nginx
+      # Mount nginx config for easier development changes
+      - ./nginx-gateway/config/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - leetcode_collab_net
+    depends_on:
+      - auth-service
+      - question-service
+    restart: unless-stopped
+
+  # Backend Authentication Service
   auth-service:
     build:
-      context: ./auth-service # Path to the backend's build context
+      context: ./auth-service
       dockerfile: Dockerfile.dev
     container_name: auth-service-dev
     ports:
-      - "8000:8000" # Expose to host machine for direct API testing
+      - "8000:8000"
     volumes:
       - ./auth-service:/app
       - /app/node_modules
     env_file:
       - .env 
+    networks:
+      - leetcode_collab_net
     depends_on:
       - mongo
+    restart: unless-stopped
 
-  # The Frontend React App
+  # Frontend React App (for hot-reload development)
   react-app:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: react-app-dev
     ports:
-      - "5173:5173"
+      - "5173:5173"  # Exposed for direct access during development
     volumes:
       - ./frontend:/app
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - VITE_API_BASE_URL=/api
     env_file:
       - .env
+    networks:
+      - leetcode_collab_net
     depends_on:
-      - auth-service
+      - nginx-gateway
+    restart: unless-stopped
 
-  # The Question Service
+  # Question Service
   question-service:
     build:
       context: ./question-service
@@ -44,9 +70,13 @@ services:
     volumes:
       - ./question-service:/app
       - /app/node_modules
+    networks:
+      - leetcode_collab_net
     depends_on:
       - mongo
+    restart: unless-stopped
   
+  # Matching Service (uncomment when ready)
   matching-service:
     build:
       context: ./matching-service
@@ -56,12 +86,16 @@ services:
       - ./matching-service:/app
       - /app/node_modules
     ports:
-      - "3001:3001"   # Express + BullBoard
+      - "3001:3001"
     env_file:
       - .env
+    networks:
+      - leetcode_collab_net
     depends_on:
       - redis
+    restart: unless-stopped
 
+  # Collab Service
   collab-service:
     build:
       context: ./collab/server
@@ -71,26 +105,39 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    networks:
+      - leetcode_collab_net
     depends_on:
       - mongo
       - redis
 
+  # Redis
   redis:
-    image: redis:7
+    image: redis:7-alpine
     container_name: redis-dev
     ports:
       - "6379:6379"
-    command: redis-server --appendonly no --save "" # remove persistence; DB starts fresh upon rerun
+    networks: 
+      - leetcode_collab_net
+    command: redis-server --appendonly no --save ""
+    restart: unless-stopped
 
-  # The Database
+  # MongoDB
   mongo:
     image: mongo:7
     container_name: mongo-auth-dev
     ports:
-      - "27017:27017" # Expose to host machine for database tools
+      - "27017:27017"
+    networks: 
+      - leetcode_collab_net
     volumes:
       - mongo-data:/data/db
+    restart: unless-stopped
 
 volumes:
   mongo-data:
   redis_data:
+
+networks:
+  leetcode_collab_net:
+    driver: bridge
