@@ -59,7 +59,6 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
             return;
         }
         console.log('🔑 JWT token length:', jwt?.length);
-        console.log('🔑 JWT token:', jwt);
         console.log('🔑 JWT parts:', jwt?.split('.').map(part => part.length));
     
         setIsMatching(true);
