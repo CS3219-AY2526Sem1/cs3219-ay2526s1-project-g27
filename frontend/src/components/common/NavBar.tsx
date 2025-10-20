@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from '@/context/AuthContext';
 import QueueTimerDisplay from "../QueueTimerDisplay";
+import { Button } from "@/components/ui/button";
 
 // Arrow SVG component
 const ArrowIndicator = () => (
@@ -9,12 +10,12 @@ const ArrowIndicator = () => (
     viewBox="0 0 12 8" 
     fill="currentColor"
   >
-    <path d="M6 0L12 8H0L6 0Z" />
+    <path d="M6 8L12 0H0L6 8Z" />
   </svg>
 );
 
 export default function NavBar() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const linkClasses = "relative transition-colors hover:text-foreground/80 text-foreground/60";
   const activeLinkClasses = "relative text-foreground font-semibold";
 
@@ -30,32 +31,37 @@ export default function NavBar() {
           </div>
           {/* Right: Navigation (only if authenticated) */}
           { isAuthenticated && (
-            <nav className="flex flex-1 items-center justify-around space-x-6 text-md sm:text-large lg:text-xl">
-              <NavLink to="/match" className={({isActive}) => isActive ? activeLinkClasses : linkClasses}>
-                {({isActive}) => (
-                  <div className='container font-press-start-2p'>
-                    {isActive && <ArrowIndicator />}
-                    MATCH!
-                  </div>
-                )}
-              </NavLink>
-              <NavLink to="/" className={({isActive}) => isActive ? activeLinkClasses : linkClasses}>
-                {({isActive}) => (
-                  <div className='container'>
-                    {isActive && <ArrowIndicator />}
-                    Dashboard
-                  </div>
-                )}
-              </NavLink>
-              <NavLink to="/profile" className={({isActive}) => isActive ? activeLinkClasses : linkClasses}>
-                {({isActive}) => (
-                  <div className='container'>
-                    {isActive && <ArrowIndicator />}
-                    Profile
-                  </div>
-                )}
-              </NavLink>
-            </nav>
+            <div className="flex flex-1 items-center justify-end space-x-6">
+              <nav className="flex flex-1 items-center justify-around space-x-6 text-md sm:text-large lg:text-xl">
+                <NavLink to="/match" className={({isActive}) => isActive ? activeLinkClasses : linkClasses}>
+                  {({isActive}) => (
+                    <div className='container font-press-start-2p'>
+                      {isActive && <ArrowIndicator />}
+                      MATCH!
+                    </div>
+                  )}
+                </NavLink>
+                <NavLink to="/" className={({isActive}) => isActive ? activeLinkClasses : linkClasses}>
+                  {({isActive}) => (
+                    <div className='container'>
+                      {isActive && <ArrowIndicator />}
+                      Dashboard
+                    </div>
+                  )}
+                </NavLink>
+                <NavLink to="/profile" className={({isActive}) => isActive ? activeLinkClasses : linkClasses}>
+                  {({isActive}) => (
+                    <div className='container'>
+                      {isActive && <ArrowIndicator />}
+                      Profile
+                    </div>
+                  )}
+                </NavLink>
+              </nav>
+              <Button variant="outline" onClick={logout}>
+                Logout
+              </Button>
+            </div>
           )}
         </div>
       </header>
