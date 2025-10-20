@@ -8,14 +8,13 @@ Author review:
 */
 
 
-import { CollaborativeEditor } from "./editor";
+import { CollaborativeEditor } from '@/components/collab/Editor';
 import { useSearchParams } from 'react-router-dom';
 
 export default function CollaborationPage() {
     const [searchParams] = useSearchParams();
     const matchToken = searchParams.get('match');
     const userId = searchParams.get('user');
-
 
     if (!matchToken) {
         return <div><p> ERROR! Did not receive a Match Token</p></div>
@@ -31,7 +30,7 @@ export default function CollaborationPage() {
 
             {/* Collab col */}
             <div className="flex-2 p-6">
-                <CollaborativeEditor matchJwt={matchToken} userId={userId} />
+                <CollaborativeEditor userId={userId} />
             </div>
         </div>
     )

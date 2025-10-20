@@ -23,10 +23,13 @@ import { yCollab } from 'y-codemirror.next';
 import { keymap } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
 import * as random from 'lib0/random';
+import { useAuth } from '@/context/AuthContext';
 
-const COLLAB_HOST = import.meta.env.COLLAB_HOST ?? 'ws://localhost';
-const COLLAB_PORT = import.meta.env.COLLAB_PORT ?? '8081';
-const WEBSOCKET_ENDPOINT = `${COLLAB_HOST}:${COLLAB_PORT}`;
+// const COLLAB_HOST = import.meta.env.COLLAB_HOST ?? 'ws://localhost';
+// const COLLAB_PORT = import.meta.env.COLLAB_PORT ?? '8081';
+// const WEBSOCKET_ENDPOINT = `${COLLAB_HOST}:${COLLAB_PORT}`;
+const WEBSOCKET_ENDPOINT = import.meta.env.VITE_WS_ENDPOINT ?? 'ws://localhost/api/collab';
+
 
 
 export const USERCOLOURS = [
@@ -43,23 +46,28 @@ export const USERCOLOURS = [
 export const userColour = USERCOLOURS[random.uint32() % USERCOLOURS.length]
 
 interface CollaborativeEditorProps {
-  matchJwt: string;
   userId: string | null;
   // Add user JWT auth token later
 }
 
 
 
-export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({matchJwt, userId })  => {
+export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({userId })  => {
   const editorRef = useRef<HTMLDivElement>(null);
   const ydocRef = useRef<Y.Doc>(null);
   const providerRef = useRef<WebsocketProvider>(null);
   const editorViewRef = useRef<EditorView>(null);
+  const { jwt: userAuthToken} = useAuth();
 
   useEffect(() => {
+    if (!userAuthToken) {
+      console.error('No user auth token available for CollaborativeEditor');
+      return;
+    }
+
     const ydoc = new Y.Doc();
     // Might want to extract roomID from JWT instead of using JWT as roomID
-    const provider = new WebsocketProvider(WEBSOCKET_ENDPOINT, matchJwt, ydoc, {params: {userId: userId || 'Anonymous ' + Math.floor(Math.random() * 100)}});
+    const provider = new WebsocketProvider(WEBSOCKET_ENDPOINT, userAuthToken, ydoc, {params: {userId: userId || 'Anonymous ' + Math.floor(Math.random() * 100), token: userAuthToken}});
     provider.ws?.addEventListener('close', event => {
       console.log('WebSocket closed:', event.code, event.reason);
     });
@@ -92,7 +100,7 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({matchJw
       ydoc.destroy();
       view.destroy();
     };
-  }, [matchJwt]);
+  }, [userAuthToken]);
 
   return <div ref={editorRef} style={{ border: '1px solid #ccc', height: '400px' }} />;
 };

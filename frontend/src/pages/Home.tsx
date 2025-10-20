@@ -44,7 +44,7 @@ const HomePage: FC = () => {
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="font-semibold text-gray-700">Json Web Token:</span>
-              <span className="text-green-600 font-medium">{jwt}</span>
+              <span className="text-green-600 font-medium">{jwt?.substring(0, 10)}</span>
             </div>
           </div>
         </CardContent>

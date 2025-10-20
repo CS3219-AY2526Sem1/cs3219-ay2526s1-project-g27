@@ -1,6 +1,6 @@
 # --- Stage 1: Build the React App ---
 # Use a Node.js image to build our frontend assets
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Set the working directory
 WORKDIR /app

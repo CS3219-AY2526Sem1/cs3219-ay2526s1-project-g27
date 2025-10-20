@@ -2,6 +2,7 @@ import { type FC } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 import HomePage from '@/pages/Home';
+import ProfilePage from '@/pages/Profile';
 import LoginPage from '@/pages/auth/Login';
 import RegisterPage from '@/pages/auth/Register';
 import NotFound from '@/pages/NotFound';
@@ -20,6 +21,7 @@ const AppRouter: FC = () => {
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/match" element={<MatchingPage />} />
         <Route path="/collab" element={<CollaborationPage/>} />
       </Route>
