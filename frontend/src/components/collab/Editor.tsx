@@ -62,10 +62,12 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
   const editorViewRef = useRef<EditorView>(null);
   const editableCompartment = useRef(new Compartment());
   const [language] = useState<string>('python3');
+  const [matchState, setMatchState] = useState<boolean>(true);
+  const [partnerState, setPartnerState] = useState<boolean>(true);
 
   const { user }= useAuth();
   if (!user) {
-    console.log("No AUth token");
+    console.log("No Auth token");
     return;
   }
   const TIMEOUT_DELAY = 3000;
@@ -78,7 +80,10 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
       clearTimeout(timeoutRef.current);
       setConnectionStatus("connected");
     }
-    if (status == "disconnected") {
+    if (status == "disconnected" || status == "connecting") {
+      if (connectionStatus == "shortDisconnect") {
+        return;
+      }
       setConnectionStatus("shortDisconnect");
       timeoutRef.current = setTimeout(() => {
         console.log("Long disconnect, freezing editting")
@@ -114,21 +119,38 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
     
     provider.ws?.addEventListener('close', event => {
       console.log('WebSocket closed:', event.code, event.reason);
-      if (event.reason == "Match Ended" && event.code == 3000) {
+      if (event.code == 3000) { // Match ended
+        console.log("Match no longer in progress"); 
         localStorage.removeItem("matchToken");
+        setMatchState(false);
+        provider.destroy();
+        ydoc.destroy();
+        view.destroy();
       }
     });
 
-    // Last user
-    provider.ws?.addEventListener('lastUser', () => {
-      console.log('You are the last user');
+    provider.ws?.addEventListener('message', (event) => {
+      switch (event.data) {
+        // Partner rejoins
+        case ('partnerRejoin'): {
+          console.log('Your partner has rejoined');
+          setPartnerState(true);
+          return;
+        }
+        // Last user
+        case ('lastUser'): {
+          console.log('You are the last user');
+          setPartnerState(false);
+          return;
+        }
+        default: {
+          return;
+        }
+      }
     });
 
-    // Match ended
-    provider.ws?.addEventListener('end', () => {
-      console.log('You are the last user');
-    });
-  
+
+    
     provider.on('status', (event) => {
       handleWebsocketStatusChange(event.status);
     });
@@ -160,6 +182,10 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
 
     return () => {
       provider.destroy();
+      if (!partnerState) {
+        console.log("Terminating match");
+        localStorage.removeItem("matchToken");
+      }
       ydoc.destroy();
       view.destroy();
     };
@@ -174,13 +200,15 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
         )
       });
     }
-  }, [connectionStatus]);
+  }, [connectionStatus, matchState]);
   
   return (
     <>
+      {!partnerState && <div> Partner left</div>}
+      {!matchState && <div> Match Does not exist </div> }
       {connectionStatus === "shortDisconnect" && <div>'Connecting...'</div>}
       {connectionStatus === "disconnected" && <div>'Disconnected'</div>}
-      <div ref={editorRef} style={{ border: '1px solid #ccc', height: '400px' }} />;
+      <div ref={editorRef} style={{ border: '1px solid #ccc', height: '400px' }} />
     </>
   )
 };

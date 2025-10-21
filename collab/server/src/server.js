@@ -43,9 +43,9 @@ const redis = new IORedis(redisOptions);
 const server = http.createServer(app);
 
 /** 
- * @type {Map<string, string[]>} 
+ * @type {Map<string, Map<string, WebSocket[]>>} 
  */
-const roomConnections = new Map();
+const roomUsersConnections = new Map();
 
 wss.on('connection', (conn, req) => {
   // When client disconnects
@@ -63,23 +63,47 @@ wss.on('connection', (conn, req) => {
       return;
     }
     const matchToken = extractRoomName(pathname);
-    if (!roomConnections.has(matchToken)) {
+    if (!roomUsersConnections.has(matchToken)) {
       console.log("Unrecorded connection being closed");
       return;
     }
-    const userList = roomConnections.get(matchToken);
-    if (userList == undefined) {
+
+    // Remove connection
+    const userConnectionMap = roomUsersConnections.get(matchToken);
+    if (userConnectionMap == undefined) {
       console.log("User List is undefined");
       return;
     }
-    const indexToRemove = userList.indexOf(query.userId);
-    userList.splice(indexToRemove,1);
-    console.log(`Remaining users in room: ${JSON.stringify(userList)}`);
-    if (userList.length == 1) {
+    const webSocketList = userConnectionMap.get(query.userId);
+    if (webSocketList == undefined) {
+      console.log("WebSocket List is undefined");
+      return; 
+    }
+    const indexToRemove = webSocketList.indexOf(conn);
+    webSocketList.splice(indexToRemove,1);
+    if (webSocketList.length > 0) {
+      // User still has connections to this room
+      return;
+    }
+    // User has no more connections to this room
+    userConnectionMap.delete(query.userId);
+    console.log(`Remaining users in room: ${JSON.stringify(roomUsersConnections)}`);
+    if (userConnectionMap.size == 1) {
       // Tell the other user 
       console.log(`Only 1 user remaining in room ${matchToken}`);
+      const finalUserConnectionMapIteration = userConnectionMap.entries().next();
+      if (typeof finalUserConnectionMapIteration.value == "undefined") {
+        return;
+      }
+      const finalUserId = finalUserConnectionMapIteration.value[0];
+      const finalUserConnections = finalUserConnectionMapIteration.value[1];
+      for (let i = 0; i < finalUserConnections.length; i++) {
+        const finalUserConn = finalUserConnections[i];
+        finalUserConn.send('lastUser');
+      }
+      return;
     }
-    if (userList.length == 0) {
+    if (userConnectionMap.size == 0) {
       stopMatch(matchToken);
     }
     return;
@@ -87,35 +111,60 @@ wss.on('connection', (conn, req) => {
   });
   if (!req.url) {
     console.log("Empty url supplied");
-    conn.close();
+    conn.close(1007, "Connection is missing url");
     return;
   }
   const { pathname, query } = url.parse(req.url, true);
   if (!pathname) {
     console.log("Connection is missing pathname")
-    conn.close();
+    conn.close(1007, "Connection is missing pathname");
     return;
   }
   if (!query) {
     console.log("Connection is missing query")
-    conn.close();
+    conn.close(1007, "Connection is missing query");
     return;
   }
   const matchToken = extractRoomName(pathname);
   if (! (typeof query.userId == "string")) {
     console.log(`userId is of wrong type. Expected <string>, instead received: ${typeof query.userId}`);
+    conn.close(1007, "Invalid userId type");
     return;
   }
-  if (roomConnections.has(matchToken)) {
-    const userList = roomConnections.get(matchToken);
-    if (userList == undefined) {
-      console.log("User List is undefined");
+  getMatchStatus(matchToken).then( (status) => {
+    if (!status) {
+      conn.close(3000, "Match has already terminated");
       return;
     }
-    
-    userList.push(query.userId);
+  })
+  if (roomUsersConnections.has(matchToken)) {
+    const userConnectionMap = roomUsersConnections.get(matchToken);
+    if (userConnectionMap == undefined) {
+      console.log("User List is undefined");
+      conn.close(1011);
+      return;
+    }
+    const webSocketList = userConnectionMap.get(query.userId);
+    if (typeof webSocketList == 'undefined') {
+      
+      const PartnerConnectionMapIteration = userConnectionMap.entries().next();
+      if (typeof PartnerConnectionMapIteration.value == "undefined") {
+        return;
+      }
+      const finalUserId = PartnerConnectionMapIteration.value[0];
+      const finalUserConnections = PartnerConnectionMapIteration.value[1];
+      for (let i = 0; i < finalUserConnections.length; i++) {
+        const finalUserConn = finalUserConnections[i];
+        finalUserConn.send('partnerRejoin');
+      }
+      userConnectionMap.set(query.userId, [conn]);
+    } else {
+      webSocketList.push(conn);
+    }
   } else {
-    roomConnections.set(matchToken, [query.userId]);
+    const userConnectionsMap = new Map();
+    userConnectionsMap.set(query.userId, [conn]);
+    roomUsersConnections.set(matchToken, userConnectionsMap);
   }
   // Print total open connections
   console.log('Client connected');
@@ -185,7 +234,8 @@ server.on('upgrade', (request, socket, head) => {
     }
     wss.handleUpgrade(request, socket, head, /** @param {any} ws */ ws => {
       wss.emit('connection', ws, request)
-    })
+    });
+
   })
 })
 
@@ -239,13 +289,14 @@ app.post('/match/start/:jwt', async (req, res) => {
 
 app.get('/match/status/:jwt', async (req, res) => {
   const token = req.params.jwt;
-  try {
-    const data = await redis.get(`match:${token}`);
 
-    if (!data) {
-      return res.status(404).json({ error: 'Match not found' });
+  const status = await getMatchStatus(token);
+  try{
+    if (status) {
+      return res.json({ status: 'in_match', token });
+    } else { 
+      return res.json({ status: 'no_match', token });
     }
-    return res.json({ status: 'in_match', token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -282,6 +333,21 @@ const stopMatch = (matchToken) => {
     throw Error("Server error when stopping match")
   }
 }
+
+const getMatchStatus = async (matchToken) => {
+  try {
+    const data = await redis.get(`match:${matchToken}`);
+
+    if (!data) {
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Error when getting Match Status");
+    throw err;
+  }
+}
+
 
 server.listen(port, host, () => {
   console.log(`running at '${host}' on port ${port}`)
