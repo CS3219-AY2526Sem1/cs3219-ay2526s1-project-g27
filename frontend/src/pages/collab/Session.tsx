@@ -15,7 +15,7 @@ import { CollaborativeEditor } from '@/components/collab/Editor';
 export default function CollaborationPage() {
 
     const matchToken = localStorage.getItem('matchToken');
-    const [language, setLanguage] = useState<"python3" | "cpp" | "javascript">("javascript");
+    const [language, setLanguage] = useState<"python3" | "cpp" | "javascript">("python3");
 
     if (!matchToken) {
         return <div><p> ERROR! Did not receive a Match Token</p></div>
