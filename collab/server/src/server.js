@@ -16,7 +16,7 @@ Author review:
 import WebSocket from 'ws'
 import http from 'http'
 import * as number from 'lib0/number'
-import { setupWSConnection, setPersistence, ROOM_PREFIX, extractRoomName} from './utils.js'
+import { setupWSConnection, setPersistence, extractRoomName} from './utils.js'
 import { mongoPersistence } from './persistence.js'
 import url from 'url';
 import jwt from 'jsonwebtoken'; // assuming you use jsonwebtoken lib
@@ -24,7 +24,8 @@ import express from 'express';
 import IORedis from 'ioredis';
 import path from 'path';
 import { match } from 'assert';
-import axios from 'axios';
+import { promisify } from 'util';
+
 
 const wss = new WebSocket.Server({ noServer: true });
 const host = process.env.COLLAB_HOST || '0.0.0.0';
@@ -41,11 +42,7 @@ const app = express();
 const redis = new IORedis(redisOptions);
 
 const server = http.createServer(app);
-
-/** 
- * @type {Map<string, Map<string, WebSocket[]>>} 
- */
-const roomUsersConnections = new Map();
+const jwtVerifyAsync = promisify(jwt.verify);
 
 wss.on('connection', (conn, req) => {
   // When client disconnects
@@ -53,61 +50,6 @@ wss.on('connection', (conn, req) => {
     console.log('Client disconnected');
     console.log('Total connections:', wss.clients.size);
     console.log(`Code: ${code}, Reason: ${reason}`);
-    if (req.url == undefined) {
-      console.log("Invalid connection with undefined URL being closed");
-      return;
-    }
-    const { pathname, query } = url.parse(req.url, true);
-    if (!pathname || !query || !query.userId || !(typeof query.userId == "string") ) {
-      console.log("Invalid connection being closed");
-      return;
-    }
-    const matchToken = extractRoomName(pathname);
-    if (!roomUsersConnections.has(matchToken)) {
-      console.log("Unrecorded connection being closed");
-      return;
-    }
-
-    // Remove connection
-    const userConnectionMap = roomUsersConnections.get(matchToken);
-    if (userConnectionMap == undefined) {
-      console.log("User List is undefined");
-      return;
-    }
-    const webSocketList = userConnectionMap.get(query.userId);
-    if (webSocketList == undefined) {
-      console.log("WebSocket List is undefined");
-      return; 
-    }
-    const indexToRemove = webSocketList.indexOf(conn);
-    webSocketList.splice(indexToRemove,1);
-    if (webSocketList.length > 0) {
-      // User still has connections to this room
-      return;
-    }
-    // User has no more connections to this room
-    userConnectionMap.delete(query.userId);
-    console.log(`Remaining users in room: ${JSON.stringify(roomUsersConnections)}`);
-    if (userConnectionMap.size == 1) {
-      // Tell the other user 
-      console.log(`Only 1 user remaining in room ${matchToken}`);
-      const finalUserConnectionMapIteration = userConnectionMap.entries().next();
-      if (typeof finalUserConnectionMapIteration.value == "undefined") {
-        return;
-      }
-      const finalUserId = finalUserConnectionMapIteration.value[0];
-      const finalUserConnections = finalUserConnectionMapIteration.value[1];
-      for (let i = 0; i < finalUserConnections.length; i++) {
-        const finalUserConn = finalUserConnections[i];
-        finalUserConn.send('lastUser');
-      }
-      return;
-    }
-    if (userConnectionMap.size == 0) {
-      stopMatch(matchToken);
-    }
-    return;
-
   });
   if (!req.url) {
     console.log("Empty url supplied");
@@ -136,42 +78,17 @@ wss.on('connection', (conn, req) => {
       conn.close(3000, "Match has already terminated");
       return;
     }
-  })
-  if (roomUsersConnections.has(matchToken)) {
-    const userConnectionMap = roomUsersConnections.get(matchToken);
-    if (userConnectionMap == undefined) {
-      console.log("User List is undefined");
-      conn.close(1011);
-      return;
-    }
-    const webSocketList = userConnectionMap.get(query.userId);
-    if (typeof webSocketList == 'undefined') {
+  }).catch( (error) => {
+    if (error instanceof URIError) {
       
-      const PartnerConnectionMapIteration = userConnectionMap.entries().next();
-      if (typeof PartnerConnectionMapIteration.value == "undefined") {
-        return;
-      }
-      const finalUserId = PartnerConnectionMapIteration.value[0];
-      const finalUserConnections = PartnerConnectionMapIteration.value[1];
-      for (let i = 0; i < finalUserConnections.length; i++) {
-        const finalUserConn = finalUserConnections[i];
-        finalUserConn.send('partnerRejoin');
-      }
-      userConnectionMap.set(query.userId, [conn]);
-    } else {
-      webSocketList.push(conn);
     }
-  } else {
-    const userConnectionsMap = new Map();
-    userConnectionsMap.set(query.userId, [conn]);
-    roomUsersConnections.set(matchToken, userConnectionsMap);
-  }
+  })
   // Print total open connections
   console.log('Client connected');
   console.log('Total connections:', wss.clients.size);
 
   // Hand off to the default Yjs handler
-  setupWSConnection(conn, req);
+  setupWSConnection(conn, req, query.userId);
 });
 
 wss.on('error', (err) => {
@@ -192,51 +109,9 @@ server.on('upgrade', (request, socket, head) => {
     socket.destroy();
     return;
   }
-  const { pathname, query } = url.parse(request.url, true);
-  console.log(`Request received on ${pathname}`)
-  const roomCheckRegex = new RegExp(`/${ROOM_PREFIX}/*`);
-  if (pathname === null || !roomCheckRegex.test(pathname)) {
-    console.log(`Invalid ws connection received on ${pathname}`)
-    socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
-    socket.destroy();
-    return;
-  }
-  let matchToken = "";
-  try {
-    matchToken = extractRoomName(pathname);
-  } catch (error) {
-    if (error instanceof URIError) {
-      console.log(`No matchToken supplied on ${pathname}`)
-      socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
-      socket.destroy();
-      return;
-    } else {
-      throw error;
-    }
-  }
-  const userId = query.userId;
-
-  // Verify JWT token
-  jwt.verify(matchToken, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      console.log('Auth failed during upgrade:', err.message);
-      // Reject connection
-      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-      socket.destroy();
-      return;
-    }
-    console.log(`Received token: ${JSON.stringify(decoded)}`);
-    // Verify user with userId, userId jwt, match jwt
-    if (userId != decoded.userA && userId != decoded.userB){
-      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-      socket.destroy();
-      return;
-    }
-    wss.handleUpgrade(request, socket, head, /** @param {any} ws */ ws => {
-      wss.emit('connection', ws, request)
-    });
-
-  })
+  wss.handleUpgrade(request, socket, head, /** @param {any} ws */ ws => {
+    wss.emit('connection', ws, request)
+  });
 })
 
 app.get('/user/status/:userId', async (req, res) => {
@@ -306,7 +181,7 @@ app.get('/match/status/:jwt', async (req, res) => {
 app.post('/match/stop/:jwt', async (req, res) => {
   const matchToken = req.params.jwt;
   try {
-    stopMatch(matchToken);
+    await stopMatch(matchToken);
     return res.json({ success: true, matchId: matchToken });
   } catch (error) {
     if (error instanceof URIError) {
@@ -317,20 +192,21 @@ app.post('/match/stop/:jwt', async (req, res) => {
   }    
 })
 
-const stopMatch = (matchToken) => {
-    try {
-    // Verify JWT token
-    jwt.verify(matchToken, process.env.JWT_SECRET, async (err, decoded) => {
-      if (err) {
-        console.log('Auth failed during match end:', err.message);
-        // Reject connection
-        throw URIError("Invalid matchToken");
-      }
-      await redis.del(`match:${matchToken}`);
-      console.log(`Successfully stoped match with id ${matchToken}`);
-    })
+export const stopMatch = async (matchToken) => {
+  try {
+    const decoded = await jwtVerifyAsync(matchToken, process.env.JWT_SECRET);
+
+    await redis.del(`match:${matchToken}`);
+    console.log(`Successfully stopped match with id ${matchToken}`);
   } catch (err) {
-    throw Error("Server error when stopping match")
+    // Safe type narrowing
+    if (err instanceof jwt.JsonWebTokenError) {
+      console.log('Auth failed during match end');
+      throw new URIError("Invalid matchToken");
+    }
+
+    console.error("Unexpected error during stopMatch:", err);
+    throw new Error("Server error when stopping match");
   }
 }
 

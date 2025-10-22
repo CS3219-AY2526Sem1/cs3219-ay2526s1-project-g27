@@ -31,9 +31,7 @@ import * as random from 'lib0/random';
 import { Compartment } from '@codemirror/state';
 import { useAuth } from '@/context/AuthContext';
 
-const COLLAB_HOST = import.meta.env.COLLAB_HOST || 'ws://localhost';
-const COLLAB_PORT = import.meta.env.COLLAB_PORT || '8081';
-const WEBSOCKET_ENDPOINT = `${COLLAB_HOST}:${COLLAB_PORT}/room`;
+const WEBSOCKET_ENDPOINT = `ws://localhost/api/collab/room`;
 
 
 export const USERCOLOURS = [
@@ -55,21 +53,18 @@ interface CollaborativeEditorProps {
   // Add user JWT auth token later
 }
 
-export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchToken })  => {
+export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchToken, language })  => {
   const editorRef = useRef<HTMLDivElement>(null);
   const ydocRef = useRef<Y.Doc>(null);
   const providerRef = useRef<WebsocketProvider>(null);
   const editorViewRef = useRef<EditorView>(null);
   const editableCompartment = useRef(new Compartment());
-  const [language] = useState<string>('python3');
-  const [matchState, setMatchState] = useState<boolean>(true);
-  const [partnerState, setPartnerState] = useState<boolean>(true);
+  const [ matchState, setMatchState ] = useState<boolean>(true);
+  const [ partnerState, setPartnerState ] = useState<boolean>(true);
+  const [ partnerLiveliness, setPartnerLiveliness] = useState<boolean>(true);
 
-  const { user }= useAuth();
-  if (!user) {
-    console.log("No Auth token");
-    return;
-  }
+  const { user, jwt }= useAuth();
+
   const TIMEOUT_DELAY = 3000;
   const timeoutRef = useRef<NodeJS.Timeout|null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'shortDisconnect' | 'connected'>('connected');
@@ -81,10 +76,13 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
       setConnectionStatus("connected");
     }
     if (status == "disconnected" || status == "connecting") {
-      if (connectionStatus == "shortDisconnect") {
+      if (connectionStatus == "shortDisconnect" || connectionStatus == "disconnected") {
         return;
       }
       setConnectionStatus("shortDisconnect");
+      if (timeoutRef.current) {
+        return;
+      }
       timeoutRef.current = setTimeout(() => {
         console.log("Long disconnect, freezing editting")
         setConnectionStatus('disconnected');
@@ -92,9 +90,13 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
     }
   };
 
-  useEffect(() => { //Handle language change
+  useEffect(() => { 
+    if (!user || !jwt) {
+      console.log("No Auth token");
+      return;
+    }
+    //Handle language change
     var languageLintExtension = javascript;
-
     switch(language) {
       case "python3": {
         languageLintExtension = python;
@@ -112,10 +114,13 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
         languageLintExtension = javascript;
       }
     }
+
+    
     
     const ydoc = new Y.Doc();
-    console.log(`Connecting to ${WEBSOCKET_ENDPOINT}/${matchToken}?userId=${user.id}`)
-    const provider = new WebsocketProvider(WEBSOCKET_ENDPOINT, matchToken, ydoc, {params: {userId: user.id || 'Anonymous ' + Math.floor(Math.random() * 100)}});
+    console.log(`Connecting to ${WEBSOCKET_ENDPOINT}/${matchToken}?userId=${user.id}?token:${jwt}`)
+    console.log(`token: ${jwt}`)
+    const provider = new WebsocketProvider(WEBSOCKET_ENDPOINT, matchToken, ydoc, {params: {userId: user.id || 'Anonymous ' + Math.floor(Math.random() * 100), token: jwt}});
     
     provider.ws?.addEventListener('close', event => {
       console.log('WebSocket closed:', event.code, event.reason);
@@ -130,6 +135,9 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
     });
 
     provider.ws?.addEventListener('message', (event) => {
+      if (!(typeof event.data === "string")){
+        return;
+      }
       switch (event.data) {
         // Partner rejoins
         case ('partnerRejoin'): {
@@ -141,6 +149,17 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
         case ('lastUser'): {
           console.log('You are the last user');
           setPartnerState(false);
+          return;
+        }
+        // Partner afk
+        case ('partnerAfk'): {
+          console.log('Your partner is afk');
+          setPartnerLiveliness(false);
+          return;
+        }
+        case ('partnerAlive'): {
+          console.log('Your partner is alive');
+          setPartnerLiveliness(true);
           return;
         }
         default: {
@@ -188,15 +207,18 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
       }
       ydoc.destroy();
       view.destroy();
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
-  }, [matchToken, language]);
+  }, [matchToken, language, user, jwt]);
   
   useEffect( () => { // Handle disconnects
     // Dispatch readonly
     if (editorViewRef.current && editableCompartment.current) {
       editorViewRef.current.dispatch({
         effects: editableCompartment.current.reconfigure(
-          EditorView.editable.of(connectionStatus != 'disconnected')
+          EditorView.editable.of(connectionStatus != 'disconnected' && matchState)
         )
       });
     }
@@ -204,6 +226,7 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
   
   return (
     <>
+      {!partnerLiveliness && partnerState && <div> Partner AFK</div>}
       {!partnerState && <div> Partner left</div>}
       {!matchState && <div> Match Does not exist </div> }
       {connectionStatus === "shortDisconnect" && <div>'Connecting...'</div>}

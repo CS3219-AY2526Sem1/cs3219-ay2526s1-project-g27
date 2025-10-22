@@ -35,7 +35,10 @@ export class AuthController {
       method: req.method,
       path: req.path,
       hasAuthHeader: !!req.headers.authorization,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      ip: req.ip
     });
 
     try {
