@@ -7,12 +7,47 @@ Author review:
 - Verfied for correctness by reading code
 */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { CollaborativeEditor } from "@/components/collab/Editor";
+import apiClient from "@/api/apiClient";
 
 export default function CollaborationPage() {
   const matchToken = localStorage.getItem("matchToken");
+  const matchingContext = JSON.parse(
+    localStorage.getItem("matchingContext") || "{}"
+  );
+  const [question, setQuestion] = useState<any>(null);
+
+  // call ## GET random with difficulty and categories - http://localhost:3013/question/random/
+  // body :
+  // ```
+  // {
+  //     "difficulty" : "hard",
+  //     "categories" : ["Data Structures", "Algorithms"]
+  // }
+  useEffect(() => {
+    if (!matchingContext.difficulty || !matchingContext.topic) {
+      console.warn("Missing matching context data");
+      return;
+    }
+
+    apiClient
+      .get("http://localhost:3013/question/random", {
+        params: {
+          difficulty: matchingContext.difficulty,
+          categories: matchingContext.topic,
+        },
+      })
+      .then((response) => {
+        console.log("Question fetched:", response.data);
+        setQuestion(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching question:", error);
+      });
+  }, []);
+
   const [language, setLanguage] = useState<"python3" | "cpp" | "javascript">(
     "python3"
   );
@@ -32,12 +67,37 @@ export default function CollaborationPage() {
 
   return (
     <div className="flex h-screen">
+      {" "}
+      <div className="flex-1 border-r border-gray-300 p-6 overflow-y-auto">
+        <h2 className="text-xl font-semibold mb-4">Question</h2>
+
+        {question ? (
+          <div>
+            <h3 className="text-lg font-bold mb-2">{question.QuestionTitle}</h3>
+            <p className="text-gray-700 mb-4">{question.QuestionDescription}</p>
+
+            <div className="text-sm text-gray-600 mb-2">
+              <strong>Difficulty:</strong> {question.QuestionComplexity}
+            </div>
+
+            <div className="text-sm text-gray-600 mb-2">
+              <strong>Categories:</strong>{" "}
+              {question.QuestionCategories?.join(", ")}
+            </div>
+
+            <div className="text-sm text-gray-600">
+              <strong>Score:</strong> {question.questionScore}
+            </div>
+          </div>
+        ) : (
+          <p>Loading question...</p>
+        )}
+      </div>
       {/* ADD THE QUESTION ON THE SIDE*/}
       <div className="flex-1 border-r border-gray-300 p-6">
         <h2 className="text-xl font-semibold mb-4">Info Panel</h2>
         <p>Details about the match, instructions, or chat here.</p>
       </div>
-
       {/* Collab col */}
       <div className="flex-2 p-6">
         <CollaborativeEditor matchToken={matchToken} language={language} />

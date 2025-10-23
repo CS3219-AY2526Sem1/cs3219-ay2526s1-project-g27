@@ -131,6 +131,16 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
       console.log("matched user", matchedUser);
       // TODO: add redirection to collaboration page
       localStorage.setItem("matchToken", data.signedData);
+      localStorage.setItem(
+        "matchingContext",
+        JSON.stringify({
+          topic,
+          difficulty,
+          matchId,
+          matchFound,
+        })
+      );
+
       navigate(`/collab`);
       setTimeout(() => {
         resetMatchState();
