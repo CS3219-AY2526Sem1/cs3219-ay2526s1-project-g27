@@ -21,7 +21,6 @@ interface MatchingContextType {
 }
 
 const MatchingContext = createContext<MatchingContextType | undefined>(undefined);
-const COLLAB_URL = import.meta.env.COLLAB_URL || "http://localhost:8081";
 
 export function MatchingProvider({ children }: { children: React.ReactNode }) {
     const [topic, setTopic] = useState<string>('');
@@ -124,7 +123,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
             console.log("matched user", matchedUser);
             // TODO: add redirection to collaboration page
             localStorage.setItem('matchToken', data.signedData);
-            navigate(`/collab`)
+            navigate(`/collab`);
             setTimeout(() => {
                 resetMatchState();
             }, 5000)
