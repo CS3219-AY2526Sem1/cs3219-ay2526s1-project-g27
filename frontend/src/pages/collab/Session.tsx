@@ -7,46 +7,14 @@ Author review:
 - Verfied for correctness by reading code
 */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { CollaborativeEditor } from "@/components/collab/Editor";
-import apiClient from "@/api/apiClient";
 
 export default function CollaborationPage() {
   const matchToken = localStorage.getItem("matchToken");
-  const matchingContext = JSON.parse(
-    localStorage.getItem("matchingContext") || "{}"
-  );
-  const [question, setQuestion] = useState<any>(null);
-
-  // call ## GET random with difficulty and categories - http://localhost:3013/question/random/
-  // body :
-  // ```
-  // {
-  //     "difficulty" : "hard",
-  //     "categories" : ["Data Structures", "Algorithms"]
-  // }
-  useEffect(() => {
-    if (!matchingContext.difficulty || !matchingContext.topic) {
-      console.warn("Missing matching context data");
-      return;
-    }
-
-    apiClient
-      .get("http://localhost:3013/question/random", {
-        params: {
-          difficulty: matchingContext.difficulty,
-          categories: matchingContext.topic,
-        },
-      })
-      .then((response) => {
-        console.log("Question fetched:", response.data);
-        setQuestion(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching question:", error);
-      });
-  }, []);
+  const question = JSON.parse(localStorage.getItem("question") || "{}");
+  console.log("Loaded question in Session:", question);
 
   const [language, setLanguage] = useState<"python3" | "cpp" | "javascript">(
     "python3"

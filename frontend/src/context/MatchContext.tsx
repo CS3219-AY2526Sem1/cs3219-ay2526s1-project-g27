@@ -122,6 +122,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
       console.log("data received", data);
       console.log("signed data received", data.signedData);
       console.log("users", data.userA, data.userB);
+      console.log("question in matchContext", data.question);
       const matchedUserId = data.userA === userId ? data.userB : data.userA;
       const matchedUser = {
         name: matchedUserId,
@@ -131,15 +132,8 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
       console.log("matched user", matchedUser);
       // TODO: add redirection to collaboration page
       localStorage.setItem("matchToken", data.signedData);
-      localStorage.setItem(
-        "matchingContext",
-        JSON.stringify({
-          topic,
-          difficulty,
-          matchId,
-          matchFound,
-        })
-      );
+      localStorage.setItem("question", JSON.stringify(data.question));
+      console.log("question stored in localStorage:", localStorage.getItem("question"));
 
       navigate(`/collab`);
       setTimeout(() => {
