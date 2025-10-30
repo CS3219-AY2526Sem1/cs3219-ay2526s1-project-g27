@@ -29,10 +29,10 @@ const requeueUser = async(userData) => {
     connection.updateJobId(job.id);
 }
 
-const handleServerError = (userData) => {
+const handleServerError = async(userData) => {
     const { userId, matchingQueue, connection } = userData;
     connection.send("serverError", { message: "Internal Server Error." });
-    handleDisconnect(userId, matchingQueue);
+    await handleDisconnect(userId, matchingQueue);
     connection.close();
 }
 
@@ -45,7 +45,7 @@ const checkMatchTimeout = async(matchId, matchingQueue) => {
             if (SSEClientConnection) {
                 if (allFields[field] === "false") {
                     SSEClientConnection.send("matchFailed", { message: "Did not accept match within time limit, please try again!" });
-                    handleDisconnect(userId, matchingQueue);
+                    await handleDisconnect(userId, matchingQueue);
                     SSEClientConnection.close();
                 } else {
                     const userData = {
@@ -137,12 +137,12 @@ const finalizeMatch = async(matchId, data, matchingQueue) => {
     console.log('signed data', signedData);
     if (SSEClientAConnection) {
         SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData });
-        handleDisconnect(data.userA, matchingQueue);
+        await handleDisconnect(data.userA, matchingQueue);
         SSEClientAConnection.close();
     }
     if (SSEClientBConnection) {
         SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData });
-        handleDisconnect(data.userB, matchingQueue);
+        await handleDisconnect(data.userB, matchingQueue);
         SSEClientBConnection.close();
     }
     await redisDB.del(matchId);

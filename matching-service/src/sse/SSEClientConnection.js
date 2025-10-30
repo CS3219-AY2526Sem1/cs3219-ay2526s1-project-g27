@@ -1,4 +1,5 @@
 const SSEClientConnections = new Map();
+const SSEConnectionLocks = new Set();
 
 class SSEClientConnection {
     res;
@@ -47,5 +48,6 @@ class SSEClientConnection {
 
 module.exports = {
     SSEClientConnections,
-    SSEClientConnection
+    SSEClientConnection,
+    SSEConnectionLocks
 };

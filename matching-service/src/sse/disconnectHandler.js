@@ -4,7 +4,7 @@ const handleDisconnect = async(userId, matchingQueue) => {
     const SSEClientConnection = SSEClientConnections.get(userId);
     // remove user from queue
     if (SSEClientConnection) {
-        console.log("Got SSE Client connection", SSEClientConnection);
+        console.log("Got SSE Client connection");
         const jobId = SSEClientConnection.getJobId();
         if (jobId) {
             const job = await matchingQueue.getJob(jobId);

@@ -174,7 +174,7 @@ matchingQueueEvents.on("failed", async ({ failedReason, jobId }) => {
             const SSEClientConnection = SSEClientConnections.get(job.data.userId);
             if (SSEClientConnection) {
                 SSEClientConnection.send("matchFailed", { message: "Unable to find a match, please try again!" });
-                handleDisconnect(job.data.userId, matchingQueue);
+                await handleDisconnect(job.data.userId, matchingQueue);
                 SSEClientConnection.close();
             }
         } else {

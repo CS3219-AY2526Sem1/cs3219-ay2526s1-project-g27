@@ -391,7 +391,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const setupSSE = (shouldAddToQueue: boolean) => {
+    const setupSSE = async(shouldAddToQueue: boolean) => {
         if (!userId || !jwt) {
             console.warn('⚠️ Cannot setup SSE: missing userId or jwt');
             return;
@@ -414,6 +414,27 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
 
         const tokenValue = jwt.replace('Bearer ', '');
         const sseUrl = `/api/matching/queue-events/${userId}?token=${encodeURIComponent(tokenValue)}`;
+
+        // First, check if we can connect
+        const canConnect = await fetch(sseUrl, { method: 'HEAD' })
+            .then(res => {
+                if (res.status === 409 || res.status === 429) throw new Error('User already connected elsewhere');
+                if (!res.ok) throw new Error('Failed to connect to SSE');
+                return true;
+            })
+            .catch(err => {
+                setErrorMessage(err.message);
+                setShowError(true);
+                setIsMatching(false);
+                syncStateToStorage({ 
+                    isMatching: false, 
+                    showError: true, 
+                    errorMessage: err.message 
+                });
+                return false;
+            });
+
+        if (!canConnect) return; // stop here if user is already connected
 
         console.log('🔗 Lead tab establishing SSE connection');
         const matchingEventSource = new EventSource(sseUrl, { withCredentials: false });
@@ -516,7 +537,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
         console.log('🏆 This tab forcibly became LEAD');
 
         // Give React state a small moment to update before SSE setup
-        setTimeout(() => {
+        setTimeout(async() => {
             console.log('🔗 Setting up SSE as lead tab');
             setupSSE(true); // join queue
         }, 50);
