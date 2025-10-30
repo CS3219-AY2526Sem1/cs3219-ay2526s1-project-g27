@@ -177,3 +177,20 @@ Replied yes and suggested ways to overcome the problem
 - [ ] Rejected
 # Author Notes:
 Went through the suggested solutions and chose a simple approach to tackle the problem that doesn't result in locking errors.
+
+# Date / Time:
+2025-10-30
+# Tool:
+ChatGPT 5
+# Prompt/Command:
+Copy pasted code that is suspected to load the state of Match Page wrongly as still preserves the status of the page after logging out and logging in
+
+# Output Summary:
+Replied with a few variations.
+
+# Action Taken:
+- [X] Accepted as-is 
+- [] Modified
+- [ ] Rejected
+# Author Notes:
+Went through the suggested solutions and chose the solution that fits the logic of what I want. Tested and works.

@@ -60,7 +60,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
 
     const tabId = useRef(`tab-${Date.now()}-${Math.random()}`);
     const channelRef = useRef<BroadcastChannel | null>(null);
-    const isInitialized = useRef(false);
+    const prevUserId = useRef<string | null>(null);
     const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
 
     // Sync ALL state to localStorage immediately
@@ -200,33 +200,26 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
 
     // Initialize from localStorage on mount
     useEffect(() => {
-        if (isInitialized.current || !userId) return;
-        isInitialized.current = true;
+        if (!userId) return;
 
-        // CLEAR OLD STALE DATA ON FIRST LOAD
+        // If user changed (or first load), reset state
+        if (prevUserId.current && prevUserId.current !== userId) {
+            console.log('🧹 User changed, clearing previous state');
+            resetMatchState();
+        }
+
+        prevUserId.current = userId;
+
+        // On login or user change
         const storedState = getStoredState();
-        
-        // Clear if data is from a different user
+
+        // Clear old state if different user
         if (storedState.userId && storedState.userId !== userId) {
-            console.log('🧹 Clearing stale state from different user');
-            localStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(LEAD_TAB_KEY);
-            return;
-        }
-
-        // Clear if matching state is stale (older than 5 minutes)
-        if (storedState.startTime && Date.now() - storedState.startTime > 5 * 60 * 1000) {
-            console.log('🧹 Clearing stale matching state (>5 min old)');
-            localStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(LEAD_TAB_KEY);
-            return;
-        }
-        
-        if (storedState.isMatching && storedState.userId === userId) {
-            console.log('🔄 Restoring queue state from storage');
+            console.log('🧹 Clearing stale state for new user');
+            resetMatchState(); // clears both memory and storage
+        } else if (storedState.isMatching && storedState.userId === userId) {
+            console.log('🔄 Restoring state for current user');
             loadStateFromStorage();
-
-            // Try to become lead and setup SSE if successful
             if (tryBecomeLeadTab()) {
                 setTimeout(() => setupSSE(false), 100);
             }
