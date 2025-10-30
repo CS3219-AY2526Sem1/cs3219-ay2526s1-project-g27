@@ -26,11 +26,13 @@ interface MatchingState {
     difficulty: string;
     matchId: string | null;
     startTime: number | null;
+    endTime: number | null;
     userId: string | null;
     showError: boolean;
     errorMessage: string;
     showAcceptMatch: boolean;
 }
+
 
 const MatchingContext = createContext<MatchingContextType | undefined>(undefined);
 
@@ -48,7 +50,8 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [showAcceptMatch, setShowAcceptMatch] = useState<boolean>(false);
     const [matchFound, setMatchFound] = useState<boolean>(false);
-    const [startTime, setStartTime] = useState<number | null>(null);
+    const [endTime, setEndTime] = useState<number | null>(null);
+
     const [isLeadTab, setIsLeadTab] = useState(false);
 
     const { user, jwt } = useAuth(); 
@@ -78,11 +81,13 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
             difficulty: '',
             matchId: null,
             startTime: null,
+            endTime: null, // 🆕
             userId: null,
             showError: false,
             errorMessage: '',
             showAcceptMatch: false
         };
+
     };
 
     // Load state from localStorage
@@ -93,7 +98,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
             setDifficulty(stored.difficulty);
             setIsMatching(stored.isMatching);
             setMatchId(stored.matchId);
-            setStartTime(stored.startTime);
+            setEndTime(stored.endTime);
             setShowError(stored.showError);
             setErrorMessage(stored.errorMessage);
             setShowAcceptMatch(stored.showAcceptMatch);
@@ -272,25 +277,34 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
         return () => channelRef.current?.close();
     }, [userId]);
 
-    // Timer effect - runs on ALL tabs, synced via startTime from localStorage
+    // Timer effect - runs on ALL tabs, synced via endTime from localStorage
     useEffect(() => {
         let interval: NodeJS.Timeout | undefined;
-        if (isMatching && startTime) {
+
+        if (isMatching && endTime) {
             const updateTimer = () => {
-                const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                setTimer(elapsed);
+                if (showAcceptMatch) return; // ❌ freeze timer when accept match is showing
+
+                const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+                setTimer(remaining);
+
+                // Auto-stop timer when it hits zero
+                if (remaining <= 0 && interval) {
+                    clearInterval(interval);
+                }
             };
-            
-            updateTimer();
+
+            updateTimer(); // Run immediately
             interval = setInterval(updateTimer, 1000);
         } else {
             setTimer(0);
         }
-        
+
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [isMatching, startTime]);
+    }, [isMatching, endTime, showAcceptMatch]);
+
 
     // Handle SSE events - runs on ALL tabs
     const handleSSEEvent = (eventType: string, data: any) => {
@@ -311,7 +325,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
                 setShowAcceptMatch(false);
                 setIsMatching(false);
                 setMatchFound(true);
-                setStartTime(null);
+                setEndTime(null);
                 localStorage.setItem('matchToken', data.signedData);
                 syncStateToStorage({ 
                     isMatching: false, 
@@ -329,7 +343,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
                 setErrorMessage(errorMsg);
                 setShowError(true);
                 setIsMatching(false);
-                setStartTime(null);
+                setEndTime(null);
                 setMatchId(null);
                 syncStateToStorage({ 
                     isMatching: false, 
@@ -347,7 +361,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
 
             case 'terminate':
                 setIsMatching(false);
-                setStartTime(null);
+                setEndTime(null);
                 setMatchId(null);
                 syncStateToStorage({ 
                     isMatching: false, 
@@ -366,6 +380,10 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
                 const requeueMsg = data.message || "Match cancelled, searching again...";
                 setErrorMessage(requeueMsg);
                 setShowError(true);
+                // 🕐 restart countdown from 1 minute
+                const newEndTime = Date.now() + 60 * 1000;
+                setEndTime(newEndTime);
+                setTimer(60);
                 syncStateToStorage({ 
                     matchId: null,
                     showError: true,
@@ -453,7 +471,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
                         setErrorMessage(errorMsg);
                         setShowError(true);
                         setIsMatching(false);
-                        setStartTime(null);
+                        setEndTime(null);
                         syncStateToStorage({ 
                             isMatching: false, 
                             startTime: null,
@@ -509,7 +527,8 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
         setShowError(false);
         setIsMatching(true);
         const queueStartTime = Date.now();
-        setStartTime(queueStartTime);
+        const countdownEndTime = queueStartTime + 60 * 1000; // 🕐 1 minute countdown
+        setEndTime(countdownEndTime);
 
         // Immediately sync to localStorage so all tabs know matching started
         syncStateToStorage({ 
@@ -517,6 +536,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
             topic,
             difficulty,
             startTime: queueStartTime,
+            endTime: countdownEndTime,
             userId,
             showError: false,
             errorMessage: ''
@@ -569,7 +589,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
 
         console.log('🛑 Stopping matching...');
         setIsMatching(false);
-        setStartTime(null);
+        setEndTime(null);
         setMatchId(null);
         setShowAcceptMatch(false);
         
@@ -577,6 +597,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
         syncStateToStorage({ 
             isMatching: false, 
             startTime: null,
+            endTime: null,
             matchId: null,
             showAcceptMatch: false
         });
@@ -609,7 +630,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
         setShowAcceptMatch(false);
         setMatchFound(false);
         setMatchId(null);
-        setStartTime(null);
+        setEndTime(null);
         
         if (isLeadTab) {
             cleanupSSE();
@@ -630,7 +651,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
             cleanupSSE();
             setIsLeadTab(false);
             setIsMatching(false);
-            setStartTime(null);
+            setEndTime(null)
             console.log('✅ State cleared. Refresh page to restart.');
         };
         
