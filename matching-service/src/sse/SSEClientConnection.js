@@ -28,7 +28,7 @@ class SSEClientConnection {
     // close SSE connection
     close() {
         if (this.res.writable) {
-            this.res.write("event: terminate\ndata: Stop listening for match events.\n\n");
+            this.res.write(`event: terminate\ndata: ${JSON.stringify({ message: 'Stop listening for match events.' })}\n\n`);
         }
     }
 

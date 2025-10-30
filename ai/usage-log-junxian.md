@@ -143,3 +143,20 @@ Code adjustments to current processJob function.
 - [ ] Rejected
 # Author Notes:
 Tested and works.
+
+# Date / Time:
+2025-10-26/27
+# Tool:
+ChatGPT 5 / Claude Sonnet 4.5 / Gemini 2.5 Flash 
+# Prompt/Command:
+Asked how to synchronize multiple tabs of the same browser to show the same matching page.
+
+# Output Summary:
+Code adjustments to MatchContext.tsx file
+
+# Action Taken:
+- [X] Accepted as-is 
+- [] Modified
+- [ ] Rejected
+# Author Notes:
+Went through many iterations of back and forth asking how to implement and along the way, realised that some edits suggested were the reasons of the bugs spotted. Finally, Claude gave the implementation that tackled the bugs and problems I highlighted.
