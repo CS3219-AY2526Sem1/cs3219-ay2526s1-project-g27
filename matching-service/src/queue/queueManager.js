@@ -59,6 +59,8 @@ async function sleep(ms) {
 const processJob = async (jobInProcess) => {
     console.log(`Job ${jobInProcess.id} in process.`);
 
+    if (jobInProcess.data.cancelled) return "Remove Job";
+
     if (jobInProcess.data.isMatched) return "Match found";
 
     for (let attempt = 1; attempt <= MAX_RECHECK_ATTEMPTS; attempt++) {
@@ -67,7 +69,8 @@ const processJob = async (jobInProcess) => {
         const allJobsInQueue = [...delayedJobs, ...waitingJobs];
         const compatibleJobs = allJobsInQueue.filter(job =>
             job.data.topic === jobInProcess.data.topic &&
-            job.data.difficulty === jobInProcess.data.difficulty
+            job.data.difficulty === jobInProcess.data.difficulty &&
+            !job.data.cancelled
         );
 
         if (compatibleJobs.length === 0) {
@@ -75,7 +78,7 @@ const processJob = async (jobInProcess) => {
         } else {
             const compatibleJob = compatibleJobs.reduce((a, b) => a.timestamp < b.timestamp ? a : b);
             const lockKey = `lock:job:${compatibleJob.id}`;
-
+            
             try {
                 // try acquiring lock for this compatible job
                 await redlock.using([lockKey], 2000, async () => {
@@ -156,8 +159,13 @@ matchingQueueEvents.on("completed", async ({ jobId }) => {
     const job = await matchingQueue.getJob(jobId);
 
     if (job) {
-        console.log(`Job ${job.id} completed.`, job.data);
-        await handleTentativeMatch(job.data, matchingQueue);
+        if (job.data.cancelled) {
+            console.log('Removing cancelled job', jobId)
+            await job.remove();
+        } else {
+            console.log(`Job ${jobId} completed.`, job.data);
+            await handleTentativeMatch(job.data, matchingQueue);
+        }
     } else {
         console.log(`Job with ID ${jobId} not found.`);
     }

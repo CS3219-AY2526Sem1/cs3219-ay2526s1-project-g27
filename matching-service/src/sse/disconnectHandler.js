@@ -10,8 +10,8 @@ const handleDisconnect = async(userId, matchingQueue) => {
             const job = await matchingQueue.getJob(jobId);
             if (job) {
                 console.log("Attempt to remove job due to disconnect");
-                await job.remove();
-                console.log("Removed job due to disconnect");
+                await job.updateData({ ...job.data, cancelled: true });
+                console.log("Removed job due to disconnect", job.data);
             }
         }
     }

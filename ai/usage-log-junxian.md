@@ -160,3 +160,20 @@ Code adjustments to MatchContext.tsx file
 - [ ] Rejected
 # Author Notes:
 Went through many iterations of back and forth asking how to implement and along the way, realised that some edits suggested were the reasons of the bugs spotted. Finally, Claude gave the implementation that tackled the bugs and problems I highlighted.
+
+# Date / Time:
+2025-10-30
+# Tool:
+ChatGPT 5
+# Prompt/Command:
+Asked if the error on removing job is because of processJob function holding onto redis lock.
+
+# Output Summary:
+Replied yes and suggested ways to overcome the problem
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+# Author Notes:
+Went through the suggested solutions and chose a simple approach to tackle the problem that doesn't result in locking errors.
