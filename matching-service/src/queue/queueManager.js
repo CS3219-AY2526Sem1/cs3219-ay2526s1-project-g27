@@ -101,6 +101,7 @@ const processJob = async (jobInProcess) => {
 
                     await jobInProcess.updateData({
                         ...jobInProcess.data,
+                        matchId: `${compatibleJob.data.userId}-${jobInProcess.data.userId}`,
                         isMatched: true,
                         matchedUserId: compatibleJob.data.userId
                     });
