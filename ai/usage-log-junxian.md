@@ -194,3 +194,20 @@ Replied with a few variations.
 - [ ] Rejected
 # Author Notes:
 Went through the suggested solutions and chose the solution that fits the logic of what I want. Tested and works.
+
+# Date / Time:
+2025-11-1
+# Tool:
+ChatGPT 5
+# Prompt/Command:
+This is my current matching criteria. I want to evolve it to weighted matching. Please create a separate function for this filtering called executeMatchingAlgorithm. I want to check if job.attemptsMade > 3 (so the last 3 attempts), we will do weighted matching (topic should aim to be the same but difficulty can differ slightly). else, the first 3 attempts should always be an exact match.
+
+# Output Summary:
+Replied with a few variations.
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+# Author Notes:
+Read through the suggested solution and made few minor modifications of logic.
