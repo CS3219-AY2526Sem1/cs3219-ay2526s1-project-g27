@@ -74,9 +74,9 @@ export default function MatchingPage() {
             <SelectTrigger className="w-full h-16 text-lg bg-white border-2 border-gray-300 rounded-lg">
               <SelectValue placeholder="Difficulty Level" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               {difficulties.map((level) => (
-                <SelectItem key={level} value={level} className="text-lg bg-white bg-opacity-100">
+                <SelectItem key={level} value={level} className="text-lg">
                   {level}
                 </SelectItem>
               ))}
@@ -88,9 +88,9 @@ export default function MatchingPage() {
             <SelectTrigger className="w-full h-16 text-lg bg-white border-2 border-gray-300 rounded-lg">
               <SelectValue placeholder="Topic" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               {topics.map((t) => (
-                <SelectItem key={t} value={t} className="text-lg bg-white bg-opacity-100">
+                <SelectItem key={t} value={t} className="text-lg">
                   {t}
                 </SelectItem>
               ))}
