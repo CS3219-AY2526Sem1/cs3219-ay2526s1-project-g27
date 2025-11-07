@@ -149,12 +149,12 @@ const finalizeMatch = async(matchId, data, matchingQueue, topic, difficulty) => 
     const signedData = jwt.sign(data, process.env.JWT_SECRET);
     console.log('signed data', signedData);
     if (SSEClientAConnection) {
-        SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData });
+        SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData, question });
         await handleDisconnect(data.userA, matchingQueue);
         SSEClientAConnection.close();
     }
     if (SSEClientBConnection) {
-        SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData });
+        SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData, question });
         await handleDisconnect(data.userB, matchingQueue);
         SSEClientBConnection.close();
     }

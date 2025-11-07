@@ -319,6 +319,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
                 setIsMatching(false);
                 setMatchFound(true);
                 setEndTime(null);
+                localStorage.setItem("question", JSON.stringify(data.question));
                 localStorage.setItem('matchToken', data.signedData);
                 syncStateToStorage({ 
                     isMatching: false, 
