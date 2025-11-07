@@ -1,5 +1,4 @@
 import express from "express";
-
 import {
   getRandomQuestion,
   createNewQuestion,
@@ -8,7 +7,6 @@ import {
   findQuestionById,
   getAllQuestions,
 } from "../controller/question-controller.js";
-
 import {
   findUserAttempts,
   addUserAttempt,
@@ -16,20 +14,16 @@ import {
 
 const router = express.Router();
 
-router.get("/random", getRandomQuestion);
-
+// ✅ Specific routes first
+router.post("/random", getRandomQuestion);
 router.get("/all", getAllQuestions);
-
-router.post("/", createNewQuestion);
-
-router.delete("/:id", deleteQuestion);
-
-router.put("/:id", updateQuestion);
-
-router.get("/:id", findQuestionById);
-
 router.get("/attempt/:username", findUserAttempts);
-
 router.post("/attempt", addUserAttempt);
+
+// ✅ Dynamic routes last
+router.post("/", createNewQuestion);
+router.put("/:id", updateQuestion);
+router.delete("/:id", deleteQuestion);
+router.get("/:id", findQuestionById);
 
 export default router;

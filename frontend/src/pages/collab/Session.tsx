@@ -9,8 +9,7 @@ Author review:
 
 import { useState } from "react";
 
-import { CollaborativeEditor } from '@/components/collab/Editor';
-
+import { CollaborativeEditor } from "@/components/collab/Editor";
 
 export default function CollaborationPage() {
 

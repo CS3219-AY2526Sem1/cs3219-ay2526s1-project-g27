@@ -585,6 +585,81 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
         setEndTime(null);
         setMatchId(null);
         setShowAcceptMatch(false);
+      }, 14000);
+      const data = JSON.parse(event.data);
+      setMatchId(data.matchId);
+    });
+
+    matchingEventSource.addEventListener("matchSuccess", (event) => {
+      console.log("Redirection to collaboration space!");
+      setShowAcceptMatch(false);
+      setIsMatching(false);
+      setMatchFound(true);
+      const data = JSON.parse(event.data);
+      console.log("data received", data);
+      console.log("signed data received", data.signedData);
+      console.log("users", data.userA, data.userB);
+      console.log("question in matchContext", data.question);
+      const matchedUserId = data.userA === userId ? data.userB : data.userA;
+      const matchedUser = {
+        name: matchedUserId,
+        level: difficulty,
+        topic: topic,
+      };
+      console.log("matched user", matchedUser);
+      // TODO: add redirection to collaboration page
+      localStorage.setItem("matchToken", data.signedData);
+      localStorage.setItem("question", JSON.stringify(data.question));
+      console.log("question stored in localStorage:", localStorage.getItem("question"));
+
+      navigate(`/collab`);
+      setTimeout(() => {
+        resetMatchState();
+      }, 5000);
+    });
+
+    matchingEventSource.addEventListener("matchFailed", (event) => {
+      console.log("match failed event", event);
+      const data = JSON.parse(event.data);
+      handleErrorDisplay(data.message);
+    });
+
+    matchingEventSource.addEventListener("requeue", (event) => {
+      const data = JSON.parse(event.data);
+      console.log(data.message);
+      setMatchId(null);
+      handleErrorDisplay(data.message);
+    });
+
+    matchingEventSource.addEventListener("terminate", () => {
+      console.log("close connection");
+      matchingEventSource.close();
+      setIsMatching(false);
+    });
+
+    matchingEventSource.addEventListener("matchAccepted", (event) => {
+      const data = JSON.parse(event.data);
+      console.log(data.message);
+    });
+
+    matchingEventSource.addEventListener("noQuestion", (event) => {
+      const data = JSON.parse(event.data);
+      console.log(data.message);
+      handleErrorDisplay(data.message);
+    });
+
+    matchingEventSource.addEventListener("serverError", (event) => {
+      const data = JSON.parse(event.data);
+      console.log(data.message);
+      handleErrorDisplay(data.message);
+    });
+  };
+
+  const acceptMatch = () => {
+    // ✅ FIXED: No query string - token is in Authorization header via apiClient
+    const matchData = {
+      userId: userId,
+      matchId: matchId,
         
         // Immediately sync to localStorage
         syncStateToStorage({ 

@@ -1,5 +1,5 @@
 # Question endpoints
-## GET random with difficulty and categories - http://localhost:3013/question/random/
+## POST (get) random with difficulty and categories - http://localhost:3013/question/random/
 body : 
 ```
 {

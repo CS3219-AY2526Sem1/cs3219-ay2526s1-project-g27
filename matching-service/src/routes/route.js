@@ -115,6 +115,7 @@ matchingRouter.post("/matches", async(req, res) => {
         await redisDB.hset(matchId, `accepted:${userId}`, "true");
         
         const allFields = await redisDB.hgetall(matchId);
+        console.log('allFields in /matches route', allFields);
         let matchAccepted = true;
         for (const field in allFields) {
             if (field.startsWith("accepted:")) {
@@ -133,7 +134,7 @@ matchingRouter.post("/matches", async(req, res) => {
                 userB: userB,
                 time: Date.now()
             }
-            await finalizeMatch(matchId, data, matchingQueue);
+            await finalizeMatch(matchId, data, matchingQueue, allFields.topic, allFields.difficulty);
             return res.status(200).json({ message: "Redirecting to collaboration space..." });
         } else {
             return res.status(200).json({ message: "Waiting for other user to accept..." });
