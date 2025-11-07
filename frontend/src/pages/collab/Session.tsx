@@ -14,6 +14,7 @@ import { CollaborativeEditor } from "@/components/collab/Editor";
 export default function CollaborationPage() {
 
     const matchToken = localStorage.getItem('matchToken');
+    const question = JSON.parse(localStorage.getItem("question") || "{}");
     const [language, setLanguage] = useState<"python3" | "cpp" | "javascript">("python3");
 
     if (!matchToken) {
@@ -28,7 +29,7 @@ export default function CollaborationPage() {
             {/* ADD THE QUESTION ON THE SIDE*/}
             <div className="flex-1 border-r border-gray-300 p-6">
                 <h2 className="text-xl font-semibold mb-4">Info Panel</h2>
-                <p>Details about the match, instructions, or chat here.</p>
+                <p>{JSON.stringify(question, null, 2)}</p>
             </div>
 
             {/* Collab col */}
