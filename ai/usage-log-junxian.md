@@ -143,3 +143,71 @@ Code adjustments to current processJob function.
 - [ ] Rejected
 # Author Notes:
 Tested and works.
+
+# Date / Time:
+2025-10-26/27
+# Tool:
+ChatGPT 5 / Claude Sonnet 4.5 / Gemini 2.5 Flash 
+# Prompt/Command:
+Asked how to synchronize multiple tabs of the same browser to show the same matching page.
+
+# Output Summary:
+Code adjustments to MatchContext.tsx file
+
+# Action Taken:
+- [X] Accepted as-is 
+- [] Modified
+- [ ] Rejected
+# Author Notes:
+Went through many iterations of back and forth asking how to implement and along the way, realised that some edits suggested were the reasons of the bugs spotted. Finally, Claude gave the implementation that tackled the bugs and problems I highlighted.
+
+# Date / Time:
+2025-10-30
+# Tool:
+ChatGPT 5
+# Prompt/Command:
+Asked if the error on removing job is because of processJob function holding onto redis lock.
+
+# Output Summary:
+Replied yes and suggested ways to overcome the problem
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+# Author Notes:
+Went through the suggested solutions and chose a simple approach to tackle the problem that doesn't result in locking errors.
+
+# Date / Time:
+2025-10-30
+# Tool:
+ChatGPT 5
+# Prompt/Command:
+Copy pasted code that is suspected to load the state of Match Page wrongly as still preserves the status of the page after logging out and logging in
+
+# Output Summary:
+Replied with a few variations.
+
+# Action Taken:
+- [X] Accepted as-is 
+- [] Modified
+- [ ] Rejected
+# Author Notes:
+Went through the suggested solutions and chose the solution that fits the logic of what I want. Tested and works.
+
+# Date / Time:
+2025-11-1
+# Tool:
+ChatGPT 5
+# Prompt/Command:
+This is my current matching criteria. I want to evolve it to weighted matching. Please create a separate function for this filtering called executeMatchingAlgorithm. I want to check if job.attemptsMade > 3 (so the last 3 attempts), we will do weighted matching (topic should aim to be the same but difficulty can differ slightly). else, the first 3 attempts should always be an exact match.
+
+# Output Summary:
+Replied with a few variations.
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+# Author Notes:
+Read through the suggested solution and made few minor modifications of logic.
