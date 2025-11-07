@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from "r
 import apiClient from "@/api/apiClient";        
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import axios, { AxiosError } from "axios";
 
 interface MatchingContextType {
     isMatching: boolean;
@@ -319,6 +320,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
                 setIsMatching(false);
                 setMatchFound(true);
                 setEndTime(null);
+                localStorage.setItem("question", JSON.stringify(data.question));
                 localStorage.setItem('matchToken', data.signedData);
                 syncStateToStorage({ 
                     isMatching: false, 
@@ -501,9 +503,29 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
         });
     };
 
-    const startMatching = () => {
+    const startMatching = async () => {
         if (!userId || !topic || !difficulty) {
             const errorMsg = 'Please select topic and difficulty';
+            setErrorMessage(errorMsg);
+            setShowError(true);
+            syncStateToStorage({ showError: true, errorMessage: errorMsg });
+            return;
+        }
+
+        // check if question exists
+        try {
+            await axios.post("http://localhost:3013/question/random", { 
+                categories: [topic], 
+                difficulty: difficulty 
+                }); 
+        } catch (error) {
+            let errorMsg;
+            if (error instanceof AxiosError && error.status === 404) {
+                errorMsg = 'No questions available for the selected topic and difficulty';
+            } else {
+                errorMsg = 'Error caught while checking question exists';
+            }
+            console.error("error checking if question exists", error);
             setErrorMessage(errorMsg);
             setShowError(true);
             syncStateToStorage({ showError: true, errorMessage: errorMsg });

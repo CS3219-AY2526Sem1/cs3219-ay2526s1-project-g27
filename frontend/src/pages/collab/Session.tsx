@@ -24,12 +24,33 @@ export default function CollaborationPage() {
         setLanguage(event.target.value as "python3" | "cpp" | "javascript");
     };
 
+    console.log("Question in Session.tsx:", question);
     return (
         <div className="flex h-screen">
             {/* ADD THE QUESTION ON THE SIDE*/}
             <div className="flex-1 border-r border-gray-300 p-6">
-                <h2 className="text-xl font-semibold mb-4">Info Panel</h2>
-                <p>{JSON.stringify(question, null, 2)}</p>
+                <h2 className="text-xl font-semibold mb-4">Question Panel</h2>
+                <div className="flex-1 border-r border-gray-300 p-6 overflow-y-auto">
+                    <h2 className="text-xl font-semibold mb-4">Question</h2>
+                    {question ? (
+                    <div>
+                        <h3 className="text-lg font-bold mb-2">{question.QuestionTitle}</h3>
+                        <p className="text-gray-700 mb-4">{question.QuestionDescription}</p>
+                        <div className="text-sm text-gray-600 mb-2">
+                        <strong>Difficulty:</strong> {question.QuestionComplexity}
+                        </div>
+                        <div className="text-sm text-gray-600 mb-2">
+                        <strong>Categories:</strong>{" "}
+                        {question.QuestionCategories?.join(", ")}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                        <strong>Score:</strong> {question.questionScore}
+                        </div>
+                    </div>
+                    ) : (
+                    <p>Loading question...</p>
+                    )}
+                </div>
             </div>
 
             {/* Collab col */}
