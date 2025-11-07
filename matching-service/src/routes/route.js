@@ -15,7 +15,7 @@ matchingRouter.post("/queue", async(req, res) => {
         if (!SSEClientConnection) {
             throw new Error();
         }
-        const question = await axios.get("http://question-service:3013/question/random", { categories: [userData.topic], difficulty: userData.topic});
+        const question = await axios.post("http://question-service:3013/question/random", { categories: [userData.topic], difficulty: userData.topic});
         if (!question) {
             SSEClientConnection.send("noQuestion", { message: "No question available for selected category and difficulty. Please make another selection." });
             await handleDisconnect(userData.userId, matchingQueue);
