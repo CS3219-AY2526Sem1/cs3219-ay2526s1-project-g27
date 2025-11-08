@@ -67,7 +67,7 @@ wss.on('connection', (conn, req) => {
 
 const getMatchStatus = async (matchToken) => {
     try{
-        const status_endpoint = `http://collab-service:8081/match/status/${matchToken}`
+        const status_endpoint = `${COLLAB_URL}/match/status/${matchToken}`
         console.log(`Fetching match status at endpoint ${status_endpoint}`)
         const response = await fetch(status_endpoint);
         if (!response.ok) {
@@ -84,5 +84,5 @@ const getMatchStatus = async (matchToken) => {
 // Basic health check route
 app.get("/", (req, res) => res.send("✅ Yjs chat backend running"));
 
-const PORT = process.env.PORT || 8082;
+const PORT = process.env.CHAT_PORT || 8082;
 server.listen(PORT, () => console.log(`🚀 Yjs WebSocket server running on port ${PORT}`));
