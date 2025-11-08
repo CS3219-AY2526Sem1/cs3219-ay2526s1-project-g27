@@ -10,7 +10,7 @@ Author review:
 import { useState } from "react";
 
 import { CollaborativeEditor } from '@/components/collab/Editor';
-
+import FloatingChat from '@/components/chat/Chat'
 
 export default function CollaborationPage() {
 
@@ -42,6 +42,7 @@ export default function CollaborationPage() {
                 <option value="cpp">C++</option>
                 <option value="javascript">Javascript</option>
             </select>
+            <FloatingChat matchToken={matchToken}/>
         </div>
     );
 }

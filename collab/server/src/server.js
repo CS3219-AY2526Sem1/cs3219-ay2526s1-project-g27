@@ -164,7 +164,7 @@ app.post('/match/start/:jwt', async (req, res) => {
 
 app.get('/match/status/:jwt', async (req, res) => {
   const token = req.params.jwt;
-
+  console.log(`Status request received for match:${jwt}`)
   const status = await getMatchStatus(token);
   try{
     if (status) {
