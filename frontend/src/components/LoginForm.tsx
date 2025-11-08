@@ -1,6 +1,4 @@
-import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,15 +28,7 @@ const formSchema = z.object({
 })
 
 export default function LoginForm() {
-  const { login, isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/", { replace: true }); 
-    }
-  }, [isAuthenticated, navigate]);
-
+  const { login, isLoading } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,11 +39,13 @@ export default function LoginForm() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      await login(values); // login({ email, password })
-    } catch (error) {
-      alert(`Login has failed + ${error}`)
-    }
+    const result = await login(values);
+    const errorMessage = result.error
+      ? result.error.message
+      : "An unknown error occured.";
+    form.setError("root", {
+      message: errorMessage,
+    });
   }
   
   return (
@@ -107,6 +99,13 @@ export default function LoginForm() {
               </FormItem>
             )}
           />
+
+          {form.formState.errors.root && (
+            <FormItem>
+              {/* You can reuse your FormMessage component for consistent styling */}
+              <FormMessage>{form.formState.errors.root.message}</FormMessage>
+            </FormItem>
+          )}
 
           <Field>
             <Button type="submit" disabled={isLoading} className="bg-navbar w-full">
