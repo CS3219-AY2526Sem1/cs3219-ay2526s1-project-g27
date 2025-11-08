@@ -16,7 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useMatching } from '@/context/MatchContext';
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import apiClient from "@/api/apiClient";   
 import { useAuth } from '@/context/AuthContext';
 
@@ -28,11 +28,18 @@ import { useAuth } from '@/context/AuthContext';
 // TODO: remove user from matching api + consider how the state can be kept whenever user is in the queue when navigate between pages
 export default function MatchingPage() {
   const difficulties = ['Easy', 'Medium', 'Hard'];
-  const topics = ['Arrays', 'Strings', 'Dynamic Programming', 'Graphs', 'Trees', 'Sorting', 'Data Structures',
-            'Algorithms'];
+  const topics = ['Arrays', 'Strings', 'Dynamic Programming', 'Graphs', 'Trees', 'Sorting'];
 
   //@ts-ignore
   const { isMatching, timer, showError, errorMessage, showAcceptMatch, matchFound, topic, difficulty, setTopic, setDifficulty, startMatching, stopMatching, acceptMatch } = useMatching();
+
+  {/* Logic for changing dialog on accept */}
+  const [isWaitingForPartner, setIsWaitingForPartner] = useState(false);
+  useEffect(() => {
+    if (!showAcceptMatch) {
+      setIsWaitingForPartner(false);
+    }
+  }, [showAcceptMatch]);
 
   const navigate = useNavigate();
   const { jwt } = useAuth();
@@ -128,7 +135,6 @@ export default function MatchingPage() {
               Redirecting to collaboration space...
             </DialogDescription>
           </DialogHeader>
-          {/* {matchedUser && ( */}
           {(
             <div className="space-y-4 py-4">
               <div className="space-y-3">
@@ -150,24 +156,77 @@ export default function MatchingPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Match Accept Dialog */}
-      {/* TODO: Need to remove closing dialog option*/}
+{/* Match Accept Dialog */}
       <Dialog open={showAcceptMatch}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Match Found! 🎉</DialogTitle>
-            <DialogDescription className="text-base">
-              You've been matched with a peer
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex gap-3 pt-4">
-              {/* TODO: Need to disable button after pressing accept*/}
-              <Button onClick={acceptMatch} className="flex-1">
-                Accept
-              </Button>
-            </div>
-          </div>
+        <DialogContent
+          className="sm:max-w-md"
+          // This prevents closing the dialog by clicking the overlay
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+        >
+          {!isWaitingForPartner ? (
+            // STATE 1: Show Accept/Decline options
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl">Match Found! 🎉</DialogTitle>
+                <DialogDescription className="text-base">
+                  You've been matched with a peer.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={stopMatching} // Assumes stopMatching handles declining
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Decline
+                </Button>
+                <Button
+                  onClick={() => {
+                    acceptMatch();
+                    setIsWaitingForPartner(true);
+                  }}
+                  className="flex-1"
+                >
+                  Accept
+                </Button>
+              </div>
+            </>
+          ) : (
+            // STATE 2: Show "Waiting for partner..."
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl">Match Accepted!</DialogTitle>
+                <DialogDescription className="text-base">
+                  Waiting for your partner to accept...
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-center items-center h-24">
+                {/* Simple loading spinner */}
+                <svg
+                  className="animate-spin h-8 w-8 text-black"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
