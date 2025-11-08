@@ -1,3 +1,12 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: Gemini 2.5 Pro) date: 2025‑11-08
+Scope: 
+- Generated simple loading spinner for UI
+Author review: 
+- Verfied for correctness by testing
+*/
+
 import { AlertCircle } from 'lucide-react';
 import {
   Select,
@@ -20,12 +29,7 @@ import { useEffect, useState } from "react";
 import apiClient from "@/api/apiClient";   
 import { useAuth } from '@/context/AuthContext';
 
-// interface MatchedUserType {
-//   name: string;
-//   level: string;
-//   topic: string;
-// }
-// TODO: remove user from matching api + consider how the state can be kept whenever user is in the queue when navigate between pages
+
 export default function MatchingPage() {
   const difficulties = ['Easy', 'Medium', 'Hard'];
   const topics = ['Arrays', 'Strings', 'Dynamic Programming', 'Graphs', 'Trees', 'Sorting'];
@@ -128,37 +132,20 @@ export default function MatchingPage() {
 
       {/* Match Success Dialog */}
       <Dialog open={matchFound}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent showCloseButton={false} className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Match Success 🎉</DialogTitle>
+            <DialogTitle className="text-2xl">Match Success!</DialogTitle>
             <DialogDescription className="text-base">
               Redirecting to collaboration space...
             </DialogDescription>
           </DialogHeader>
-          {(
-            <div className="space-y-4 py-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="font-semibold text-gray-600">Name:</span>
-                  {/* <span className="text-lg">{matchedUser.name}</span> */}
-                </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="font-semibold text-gray-600">Difficulty:</span>
-                  {/* <span className="text-lg">{matchedUser.level}</span> */}
-                </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="font-semibold text-gray-600">Topic:</span>
-                  {/* <span className="text-lg">{matchedUser.topic}</span> */}
-                </div>
-              </div>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
 
-{/* Match Accept Dialog */}
+      {/* Match Accept Dialog */}
       <Dialog open={showAcceptMatch}>
         <DialogContent
+          showCloseButton={false}
           className="sm:max-w-md"
           // This prevents closing the dialog by clicking the overlay
           onInteractOutside={(e) => {
@@ -169,14 +156,14 @@ export default function MatchingPage() {
             // STATE 1: Show Accept/Decline options
             <>
               <DialogHeader>
-                <DialogTitle className="text-2xl">Match Found! 🎉</DialogTitle>
+                <DialogTitle className="text-2xl">Match Found!</DialogTitle>
                 <DialogDescription className="text-base">
                   You've been matched with a peer.
                 </DialogDescription>
               </DialogHeader>
               <div className="flex gap-3 pt-4">
                 <Button
-                  onClick={stopMatching} // Assumes stopMatching handles declining
+                  onClick={stopMatching} 
                   variant="outline"
                   className="flex-1"
                 >
@@ -203,7 +190,7 @@ export default function MatchingPage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="flex justify-center items-center h-24">
-                {/* Simple loading spinner */}
+                {/* Simple loading spinner (AI-generated) */}
                 <svg
                   className="animate-spin h-8 w-8 text-black"
                   xmlns="http://www.w3.org/2000/svg"
