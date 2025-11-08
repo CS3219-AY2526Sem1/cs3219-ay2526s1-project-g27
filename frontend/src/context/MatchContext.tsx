@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState, useRef } from "r
 import apiClient from "@/api/apiClient";        
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import axios, { AxiosError } from "axios";
 
 interface MatchingContextType {
     isMatching: boolean;
@@ -513,24 +512,27 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
         }
 
         // check if question exists
-        try {
-            await axios.post("http://localhost:3013/question/random", { 
-                categories: [topic], 
-                difficulty: difficulty 
-                }); 
-        } catch (error) {
-            let errorMsg;
-            if (error instanceof AxiosError && error.status === 404) {
-                errorMsg = 'No questions available for the selected topic and difficulty';
-            } else {
-                errorMsg = 'Error caught while checking question exists';
-            }
-            console.error("error checking if question exists", error);
-            setErrorMessage(errorMsg);
-            setShowError(true);
-            syncStateToStorage({ showError: true, errorMessage: errorMsg });
-            return;
-        }
+        let questionExists = true;
+        await apiClient.post(`/questions/question/random`, { 
+            categories: [topic], 
+            difficulty: difficulty 
+            })
+            .then(() => {
+            })
+            .catch(error => {
+                let errorMsg = "apiClient post error caught while checking question exists";
+                if (error.response?.status === 404) {
+                    errorMsg = 'No question found for the selected topic and difficulty';
+                    console.log(errorMsg);
+                }
+                questionExists = false;
+                setErrorMessage(errorMsg);
+                setShowError(true);
+                syncStateToStorage({ showError: true, errorMessage: errorMsg });
+            });
+        if (!questionExists) return;
+            
+
 
         const stored = getStoredState();
         if (stored.isMatching && stored.userId === userId) {

@@ -10,6 +10,8 @@ import {
 import {
   findUserAttempts,
   addUserAttempt,
+  getAllAttempts,
+  deleteAllAttempts,
 } from "../controller/question-attempt-controller.js";
 
 const router = express.Router();
@@ -17,8 +19,10 @@ const router = express.Router();
 // ✅ Specific routes first
 router.post("/random", getRandomQuestion);
 router.get("/all", getAllQuestions);
-router.get("/attempt/:username", findUserAttempts);
+router.get("/attempt/:UserId", findUserAttempts);
 router.post("/attempt", addUserAttempt);
+router.get("/attempt/all", getAllAttempts);
+router.delete("/attempt/all", deleteAllAttempts);
 
 // ✅ Dynamic routes last
 router.post("/", createNewQuestion);
