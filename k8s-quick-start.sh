@@ -59,6 +59,7 @@ minikube start --cpus=4 --memory=8192 --driver=docker || {
 
 echo_info "Enabling Ingress addon..."
 minikube addons enable ingress
+minikube addons enable storage-provisioner
 
 echo_info "Switching to Minikube Docker daemon..."
 eval $(minikube docker-env)
