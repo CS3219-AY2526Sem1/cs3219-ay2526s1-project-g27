@@ -7,6 +7,8 @@ export interface CustomAuthContextType extends AuthContextType {
   jwt: string | null;
   isLoading: boolean;
   refreshJwt: () => Promise<void>;
+  requestPasswordReset: (email: string, redirectTo?: string) => Promise<any>;
+  resetPassword: (token: string, newPassword: string) => Promise<any>;
 }
 
 export const AuthContext = createContext<CustomAuthContextType | null>(null);
@@ -123,6 +125,47 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     return result;
   };
 
+  const requestPasswordReset = async (email: string, redirectTo?: string) => {
+    try {
+      const result = await authClient.requestPasswordReset({
+        email,
+        redirectTo, // optional: where user will be redirected to handle token
+      });
+
+      if (result.error) {
+        console.error("Request password reset error:", result.error.message);
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Request password reset exception:", error);
+      return { error };
+    }
+  };
+
+  const resetPassword = async (token: string, newPassword: string) => {
+    try {
+      const result = await authClient.resetPassword({
+        token,
+        newPassword,
+      });
+
+      if (result.error) {
+        console.error("Reset password error:", result.error.message);
+      } else {
+        // optional: fetch a fresh JWT/session after successful reset
+        await fetchJwtToken();
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Reset password exception:", error);
+      return { error };
+    }
+  };
+
+
+
   const logout = async () => {
     await authClient.signOut();
     setJwt(null);
@@ -144,6 +187,8 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     logout,
     signup,
     refreshJwt,
+    requestPasswordReset,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

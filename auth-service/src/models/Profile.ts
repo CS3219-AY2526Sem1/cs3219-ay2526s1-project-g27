@@ -9,11 +9,12 @@ export const solvedProblemSchema = z.object({
 
 export const profileSchema = z.object({
   userId: z.string(), 
-  handle: z.string().optional(),
+  handles: z.array(z.string()).default([]),
   currentRating: z.number().int(),
   problemsSolved: z.array(solvedProblemSchema).default([]),
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
+  biography: z.string().default(""),
 });
 
 type BaseProfile = z.infer<typeof profileSchema>;

@@ -1,3 +1,15 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5) date: 2025-9-14, 2025-9-20, 2025-10-05
+Scope: 
+- Generated initial code
+- Added JWT Token verification
+- Debugging 
+Author review: 
+- Verfied for correctness by reading code
+*/
+
+
 import { createRemoteJWKSet, jwtVerify, JWTVerifyResult } from 'jose';
 import { Request, Response } from "express";
 
@@ -127,12 +139,3 @@ export class AuthController {
   }
 }
 
-/**
- * Optional: Pre-initialize JWKS on module load
- * Uncomment if you want to initialize JWKS immediately when the server starts
- */
-// try {
-//   getJWKS();
-// } catch (error) {
-//   console.error('Failed to pre-initialize JWKS:', error);
-// }

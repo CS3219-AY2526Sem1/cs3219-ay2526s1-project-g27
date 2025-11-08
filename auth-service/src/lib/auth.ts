@@ -35,7 +35,26 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    autoSignIn: false, 
+    autoSignIn: false,
+    sendResetPassword: async ({user, url, token}, request) => {
+      const frontendUrl = new URL(url);
+      frontendUrl.host = new URL(process.env.FRONTEND_URL as string).host;
+      const emailHtml = await render(
+        VerificationEmail({ userName: user.name,verificationUrl: frontendUrl.toString()})
+      );
+
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM as string,
+        to: user.email,
+        subject: 'Verify your email',
+        html: emailHtml 
+      });
+    },
+    onPasswordReset: async ({ user }, request) => {
+      // your logic here
+      console.log(`Password for user ${user.email} has been reset.`);
+    },
+
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
@@ -118,7 +137,9 @@ export const auth = betterAuth({
               currentRating: 1000,
               problemsSolved: [],
               createdAt: new Date(),
-              updatedAt: new Date()
+              updatedAt: new Date(),
+              biography: "",
+              handles: [],
             });
 
             console.log("Profile created for user:", user.id);
