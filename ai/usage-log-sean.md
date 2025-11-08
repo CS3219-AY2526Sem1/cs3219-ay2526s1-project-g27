@@ -160,3 +160,21 @@ Asked for Ngnix configuration instead since gateway showing alot of problems, it
 Modifying it to tailor to our own service and settings. This include adding to SSE and adding authorization headers.
 Decided to also host react on the ngnix and serve it instead of separating out.
 
+
+# Date / Time
+7-11-2025  to 9-11-2025
+# Tool:
+Gemini Pro 2.5 and Claude Sonnet 4.5
+
+# Prompt / Command / Description:
+Given the nginx config and docker-compose, write me the kubernetes config files for those. We specifically use a leetcode collab, so we need sticky session for matching / collab service since they are using web sockets and like stateful sets for any relevant data apps
+
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+
+# Author Notes:
+Modified to use own files, changed some settings like memory etc
+

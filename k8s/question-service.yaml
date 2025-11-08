@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: question-service
+  namespace: leetcode-collab
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: question-service
+  template:
+    metadata:
+      labels:
+        app: question-service
+    spec:
+      containers:
+      - name: question-service
+        # image: PLACEHOLDER/question-service:latest  # ← We'll replace this
+        image: question-service:latest 
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - containerPort: 3013
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: question-service
+  namespace: leetcode-collab
+spec:
+  selector:
+    app: question-service
+  ports:
+  - port: 3013
+    targetPort: 3013
+  type: ClusterIP

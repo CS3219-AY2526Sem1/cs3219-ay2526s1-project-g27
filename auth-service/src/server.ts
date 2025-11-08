@@ -4,7 +4,7 @@ import { toNodeHandler } from "better-auth/node";
 import {closeDatabase, connectToDatabase } from "./lib/db";
 import { auth } from "./lib/auth";
 import userRouter from "./routes/route";
-import authRouter from "./routes/authroute";
+import authRouter from "./routes/authRoute";
 
 const app = express();
 const PORT: number = process.env.AUTH_PORT ? parseInt(process.env.AUTH_PORT, 10) : 8000;
