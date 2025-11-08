@@ -67,7 +67,7 @@ wss.on('connection', (conn, req) => {
 
 const getMatchStatus = async (matchToken) => {
     try{
-        const status_endpoint = `${COLLAB_URL}/match/status/${matchToken}`
+        const status_endpoint = `${process.env.COLLAB_URL}/match/status/${matchToken}`
         console.log(`Fetching match status at endpoint ${status_endpoint}`)
         const response = await fetch(status_endpoint);
         if (!response.ok) {
