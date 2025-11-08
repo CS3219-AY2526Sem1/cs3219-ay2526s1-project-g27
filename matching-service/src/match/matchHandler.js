@@ -29,10 +29,10 @@ const requeueUser = async(userData) => {
     connection.updateJobId(job.id);
 }
 
-const handleServerError = (userData) => {
+const handleServerError = async(userData) => {
     const { userId, matchingQueue, connection } = userData;
     connection.send("serverError", { message: "Internal Server Error." });
-    handleDisconnect(userId, matchingQueue);
+    await handleDisconnect(userId, matchingQueue);
     connection.close();
 }
 
@@ -45,7 +45,7 @@ const checkMatchTimeout = async(matchId, matchingQueue) => {
             if (SSEClientConnection) {
                 if (allFields[field] === "false") {
                     SSEClientConnection.send("matchFailed", { message: "Did not accept match within time limit, please try again!" });
-                    handleDisconnect(userId, matchingQueue);
+                    await handleDisconnect(userId, matchingQueue);
                     SSEClientConnection.close();
                 } else {
                     const userData = {
@@ -129,20 +129,33 @@ const handleTentativeMatch = async(jobData, matchingQueue) => {
     }
 }
 
-const finalizeMatch = async(matchId, data, matchingQueue) => {
-    console.log('data in finalize match', data, data.userA, data.userB);
+const finalizeMatch = async(matchId, data, matchingQueue, topic, difficulty) => {
+    console.log('data in finalize match', data, data.userA, data.userB, matchingQueue, topic, difficulty);
+    // call question service to get question here
+    let question;
+    try {
+     const response = await axios.post("http://question-service:3013/question/random/", {
+        categories: [topic],
+        difficulty,
+        });
+       question = response.data;
+    } catch (error) {
+        console.error("Error fetching question from question service:", error);
+        throw error;
+    }
+    console.log('Question retrieved', question);
     const SSEClientAConnection = SSEClientConnections.get(data.userA);
     const SSEClientBConnection = SSEClientConnections.get(data.userB);
     const signedData = jwt.sign(data, process.env.JWT_SECRET);
     console.log('signed data', signedData);
     if (SSEClientAConnection) {
-        SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData });
-        handleDisconnect(data.userA, matchingQueue);
+        SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData, question });
+        await handleDisconnect(data.userA, matchingQueue);
         SSEClientAConnection.close();
     }
     if (SSEClientBConnection) {
-        SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData });
-        handleDisconnect(data.userB, matchingQueue);
+        SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData, question });
+        await handleDisconnect(data.userB, matchingQueue);
         SSEClientBConnection.close();
     }
     await redisDB.del(matchId);

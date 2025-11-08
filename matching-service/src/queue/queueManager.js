@@ -56,8 +56,62 @@ async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function executeMatchingAlgorithm(allJobsInQueue, jobInProcess) {
+    const { topic, difficulty } = jobInProcess.data;
+    const { attemptsMade } = jobInProcess;
+
+    // Convert difficulty to numeric scale
+    const difficultyToNum = (diff) => {
+        const levels = { easy: 1, medium: 2, hard: 3 };
+        const normalized = diff.toLowerCase();
+        return levels[normalized] ?? 0;
+    };
+
+    const diffValue = difficultyToNum(difficulty);
+
+    // Compute similarity score between 0 and 1
+    const computeScore = (job) => {
+        if (job.data.cancelled) return 0;
+
+        const sameTopic = job.data.topic === topic ? 1 : 0;
+        const diffScore = 1 - Math.min(Math.abs(difficultyToNum(job.data.difficulty) - diffValue) / 2, 1); 
+        // e.g. if diff difference is 0 → 1.0 score; diff = 1 → 0.5; diff = 2 → 0
+
+        // Weights (for now, based on topic and difficulty only, hardcoded weight)
+        const topicWeight = 0.7;
+        const difficultyWeight = 0.3;
+
+        // Weighted total score
+        return topicWeight * sameTopic + difficultyWeight * diffScore;
+    };
+
+    // Exact match for first 3 attempts
+    if (attemptsMade <= 3) {
+        return allJobsInQueue.filter(
+            job =>
+                !job.data.cancelled &&
+                job.data.topic === topic &&
+                job.data.difficulty === difficulty
+        );
+    }
+
+    // After 3 attempts → compute weighted matches
+    const scoredJobs = allJobsInQueue
+        .map(job => ({
+            job,
+            score: computeScore(job)
+        }))
+        .filter(({ score }) => score >= 0.6)
+        .sort((a, b) => b.score - a.score)  
+        .map(({ job }) => job);
+
+    return scoredJobs;
+}
+
 const processJob = async (jobInProcess) => {
     console.log(`Job ${jobInProcess.id} in process.`);
+
+    if (jobInProcess.data.cancelled) return "Remove Job";
 
     if (jobInProcess.data.isMatched) return "Match found";
 
@@ -65,17 +119,14 @@ const processJob = async (jobInProcess) => {
         const delayedJobs = await matchingQueue.getDelayed();
         const waitingJobs = await matchingQueue.getWaiting();
         const allJobsInQueue = [...delayedJobs, ...waitingJobs];
-        const compatibleJobs = allJobsInQueue.filter(job =>
-            job.data.topic === jobInProcess.data.topic &&
-            job.data.difficulty === jobInProcess.data.difficulty
-        );
+        const compatibleJobs = executeMatchingAlgorithm(allJobsInQueue, jobInProcess);
 
         if (compatibleJobs.length === 0) {
             console.log(`Attempt ${attempt}: No compatible jobs found.`);
         } else {
             const compatibleJob = compatibleJobs.reduce((a, b) => a.timestamp < b.timestamp ? a : b);
             const lockKey = `lock:job:${compatibleJob.id}`;
-
+            
             try {
                 // try acquiring lock for this compatible job
                 await redlock.using([lockKey], 2000, async () => {
@@ -101,6 +152,7 @@ const processJob = async (jobInProcess) => {
 
                     await jobInProcess.updateData({
                         ...jobInProcess.data,
+                        matchId: `${compatibleJob.data.userId}-${jobInProcess.data.userId}`,
                         isMatched: true,
                         matchedUserId: compatibleJob.data.userId
                     });
@@ -155,8 +207,13 @@ matchingQueueEvents.on("completed", async ({ jobId }) => {
     const job = await matchingQueue.getJob(jobId);
 
     if (job) {
-        console.log(`Job ${job.id} completed.`, job.data);
-        await handleTentativeMatch(job.data, matchingQueue);
+        if (job.data.cancelled) {
+            console.log('Removing cancelled job', jobId)
+            await job.remove();
+        } else {
+            console.log(`Job ${jobId} completed.`, job.data);
+            await handleTentativeMatch(job.data, matchingQueue);
+        }
     } else {
         console.log(`Job with ID ${jobId} not found.`);
     }
@@ -173,7 +230,7 @@ matchingQueueEvents.on("failed", async ({ failedReason, jobId }) => {
             const SSEClientConnection = SSEClientConnections.get(job.data.userId);
             if (SSEClientConnection) {
                 SSEClientConnection.send("matchFailed", { message: "Unable to find a match, please try again!" });
-                handleDisconnect(job.data.userId, matchingQueue);
+                await handleDisconnect(job.data.userId, matchingQueue);
                 SSEClientConnection.close();
             }
         } else {

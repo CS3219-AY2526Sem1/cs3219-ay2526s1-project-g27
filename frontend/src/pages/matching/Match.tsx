@@ -15,6 +15,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useMatching } from '@/context/MatchContext';
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import apiClient from "@/api/apiClient";   
+import { useAuth } from '@/context/AuthContext';
 
 // interface MatchedUserType {
 //   name: string;
@@ -24,10 +28,37 @@ import { useMatching } from '@/context/MatchContext';
 // TODO: remove user from matching api + consider how the state can be kept whenever user is in the queue when navigate between pages
 export default function MatchingPage() {
   const difficulties = ['Easy', 'Medium', 'Hard'];
-  const topics = ['Arrays', 'Strings', 'Dynamic Programming', 'Graphs', 'Trees', 'Sorting'];
+  const topics = ['Arrays', 'Strings', 'Dynamic Programming', 'Graphs', 'Trees', 'Sorting', 'Data Structures',
+            'Algorithms'];
 
   //@ts-ignore
   const { isMatching, timer, showError, errorMessage, showAcceptMatch, matchFound, topic, difficulty, setTopic, setDifficulty, startMatching, stopMatching, acceptMatch } = useMatching();
+
+  const navigate = useNavigate();
+  const { jwt } = useAuth();
+  const tokenValue = jwt?.replace('Bearer ', ''); 
+  const qs = tokenValue ? `?token=${encodeURIComponent(tokenValue)}` : "";
+
+  useEffect(() => {
+    const localToken = localStorage.getItem("matchToken");
+
+    if (localToken) {
+      console.log("Already in collaboration, localStorage check");
+      apiClient.get(`/collab/match/status/${localToken}${qs}`)
+      .then(response => {
+          console.log("Response check", response);
+            if (response.data.status === 'in_match') {
+                navigate("/collab");
+            } else if (response.data.status === 'no_match') {
+              // if token is stale, clean it up
+              localStorage.removeItem("matchToken");
+            }
+        })
+        .catch(error => {
+            console.error("Error checking match status:", error);
+        });
+    }
+  }, []);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
