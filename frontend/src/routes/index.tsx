@@ -23,6 +23,7 @@ const AppRouter: FC = () => {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/match" element={<MatchingPage />} />
         <Route path="/collab" element={<CollaborationPage/>} />
+        <Route path="/chat" />
       </Route>
       
       {/* 404 Handler */}

@@ -1,13 +1,27 @@
-import { type FC } from 'react';
+import { useEffect, useState, type FC } from 'react';
 import { Pencil } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from "@/components/ui/button";
+import apiClient from "@/api/apiClient";  
 
 const ProfilePage: FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuth();  
+  const [attempts, setAttempts] = useState<any[]>([]);
 
-  // Helper to get user initials for the avatar
-  const getInitials = (name: string) => {
+  console.log("attempts state:", attempts);
+
+  useEffect(() => {
+    apiClient.get(`/questions/question/attempt/${user!.id}`)
+      .then(
+        res => {
+          setAttempts(res.data);
+          console.log("Fetched attempts:", res.data);
+        }
+      )
+      .catch(err => console.error(err));
+  }, [user?.id]);
+
+    const getInitials = (name: string) => {
     const names = name.split(' ');
     const initials = names.map(n => n[0]).join('');
     return initials.slice(0, 2).toUpperCase();
@@ -61,6 +75,34 @@ const ProfilePage: FC = () => {
             <p>Last logged in: Tuesday 8:58pm</p>
             <p>Questions completed: 609</p>
           </div>
+        </div>
+
+        {/* <div>
+          {attempts}
+        </div> */}
+        {/* Attempt history section */}
+         <div className="p-4">
+          <h2 className="text-lg font-bold mb-4">Question Attempts</h2>
+          <table className="w-full border">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border p-2">Question</th>
+                <th className="border p-2">Difficulty</th>
+                <th className="border p-2"> Categories</th>
+                <th className="border p-2">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {attempts.map(a => (
+                <tr key={a._id}>
+                  <td className="border p-2">{a.QuestionTitle}</td>
+                  <td className="border p-2">{a.Difficulty}</td>
+                  <td className="border p-2">{a.Categories.join(', ')}</td>
+                  <td className="border p-2">{new Date(a.AttemptedAt).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

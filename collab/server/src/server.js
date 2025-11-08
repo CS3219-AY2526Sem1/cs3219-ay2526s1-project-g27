@@ -25,11 +25,13 @@ import IORedis from 'ioredis';
 import path from 'path';
 import { match } from 'assert';
 import { promisify } from 'util';
+import dotenv from "dotenv";
 
+dotenv.config();
 
 const wss = new WebSocket.Server({ noServer: true });
 const host = process.env.COLLAB_HOST || '0.0.0.0';
-const port = number.parseInt(process.env.COLLAB_HOST || '8081');
+const port = number.parseInt(process.env.COLLAB_PORT || '8081');
 const redisOptions = {
     host: process.env.REDIS_HOST,
     port: Number(process.env.REDIS_PORT),
@@ -164,7 +166,7 @@ app.post('/match/start/:jwt', async (req, res) => {
 
 app.get('/match/status/:jwt', async (req, res) => {
   const token = req.params.jwt;
-
+  console.log(`Status request received for match:${jwt}`)
   const status = await getMatchStatus(token);
   try{
     if (status) {

@@ -50,7 +50,6 @@ export const userColour = USERCOLOURS[random.uint32() % USERCOLOURS.length]
 interface CollaborativeEditorProps {
   matchToken: string;
   language: "python3" | "cpp" | "javascript";
-  // Add user JWT auth token later
 }
 
 export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchToken, language })  => {
@@ -118,8 +117,8 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
     
     
     const ydoc = new Y.Doc();
-    console.log(`Connecting to ${WEBSOCKET_ENDPOINT}/${matchToken}?userId=${user.id}?token:${jwt}`)
-    console.log(`token: ${jwt}`)
+    // console.log(`Connecting to ${WEBSOCKET_ENDPOINT}/${matchToken}?userId=${user.id}?token:${jwt}`)
+    // console.log(`token: ${jwt}`)
     const provider = new WebsocketProvider(WEBSOCKET_ENDPOINT, matchToken, ydoc, {params: {userId: user.id || 'Anonymous ' + Math.floor(Math.random() * 100), token: jwt}});
     
     provider.ws?.addEventListener('close', event => {
