@@ -31,8 +31,18 @@ import { useAuth } from '@/context/AuthContext';
 
 
 export default function MatchingPage() {
-  const difficulties = ['Easy', 'Medium', 'Hard'];
-  const topics = ['Arrays', 'Strings', 'Dynamic Programming', 'Graphs', 'Trees', 'Sorting'];
+  // based on currently seeded values from question service
+  const difficulties = ['easy', 'medium', 'hard'];
+  const topics = [
+    "Algorithms",
+    "Arrays",
+    "Bit Manipulation",
+    "Brainteaser",
+    "Data Structures",
+    "Databases",
+    "Recursion",
+    "Strings"
+  ];
 
   //@ts-ignore
   const { isMatching, timer, showError, errorMessage, showAcceptMatch, matchFound, topic, difficulty, setTopic, setDifficulty, startMatching, stopMatching, acceptMatch } = useMatching();
