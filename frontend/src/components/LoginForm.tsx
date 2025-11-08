@@ -68,7 +68,7 @@ export default function LoginForm() {
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-600"/>
               </FormItem>
             )}
           />
@@ -95,7 +95,7 @@ export default function LoginForm() {
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-600"/>
               </FormItem>
             )}
           />
@@ -103,7 +103,7 @@ export default function LoginForm() {
           {form.formState.errors.root && (
             <FormItem>
               {/* You can reuse your FormMessage component for consistent styling */}
-              <FormMessage>{form.formState.errors.root.message}</FormMessage>
+              <FormMessage className="text-red-600">{form.formState.errors.root.message}</FormMessage>
             </FormItem>
           )}
 
