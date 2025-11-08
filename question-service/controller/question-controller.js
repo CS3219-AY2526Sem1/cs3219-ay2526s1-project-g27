@@ -8,7 +8,14 @@ import {
 import questionModel from "../model/question-model.js";
 
 export async function getRandomQuestion(req, res) {
-  const { difficulty, categories } = req.body;
+  let { difficulty, categories } = req.body;
+
+  difficulty = difficulty.toLowerCase();
+
+  categories = categories.map((cat) => {
+    const lower = cat.toLowerCase();
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  });
   try {
     const question = await findAnyWithDifficultyAndCategory(
       difficulty,

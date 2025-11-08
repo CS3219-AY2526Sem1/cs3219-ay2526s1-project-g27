@@ -15,7 +15,8 @@ matchingRouter.post("/queue", async(req, res) => {
         if (!SSEClientConnection) {
             throw new Error();
         }
-        const question = await axios.get("http://question-service:3013/question/random", { categories: [userData.topic], difficulty: userData.topic});
+        console.log(userData.topic, userData.difficulty)
+        const question = await axios.post("http://question-service:3013/question/random", { categories: [userData.topic], difficulty: userData.difficulty});
         if (!question) {
             SSEClientConnection.send("noQuestion", { message: "No question available for selected category and difficulty. Please make another selection." });
             await handleDisconnect(userData.userId, matchingQueue);
@@ -115,6 +116,7 @@ matchingRouter.post("/matches", async(req, res) => {
         await redisDB.hset(matchId, `accepted:${userId}`, "true");
         
         const allFields = await redisDB.hgetall(matchId);
+        console.log('allFields in /matches route', allFields);
         let matchAccepted = true;
         for (const field in allFields) {
             if (field.startsWith("accepted:")) {
@@ -133,7 +135,7 @@ matchingRouter.post("/matches", async(req, res) => {
                 userB: userB,
                 time: Date.now()
             }
-            await finalizeMatch(matchId, data, matchingQueue);
+            await finalizeMatch(matchId, data, matchingQueue, allFields.topic, allFields.difficulty);
             return res.status(200).json({ message: "Redirecting to collaboration space..." });
         } else {
             return res.status(200).json({ message: "Waiting for other user to accept..." });

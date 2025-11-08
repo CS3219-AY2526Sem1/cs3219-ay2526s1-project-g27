@@ -129,19 +129,32 @@ const handleTentativeMatch = async(jobData, matchingQueue) => {
     }
 }
 
-const finalizeMatch = async(matchId, data, matchingQueue) => {
-    console.log('data in finalize match', data, data.userA, data.userB);
+const finalizeMatch = async(matchId, data, matchingQueue, topic, difficulty) => {
+    console.log('data in finalize match', data, data.userA, data.userB, matchingQueue, topic, difficulty);
+    // call question service to get question here
+    let question;
+    try {
+     const response = await axios.post("http://question-service:3013/question/random/", {
+        categories: [topic],
+        difficulty,
+        });
+       question = response.data;
+    } catch (error) {
+        console.error("Error fetching question from question service:", error);
+        throw error;
+    }
+    console.log('Question retrieved', question);
     const SSEClientAConnection = SSEClientConnections.get(data.userA);
     const SSEClientBConnection = SSEClientConnections.get(data.userB);
     const signedData = jwt.sign(data, process.env.JWT_SECRET);
     console.log('signed data', signedData);
     if (SSEClientAConnection) {
-        SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData });
+        SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData, question });
         await handleDisconnect(data.userA, matchingQueue);
         SSEClientAConnection.close();
     }
     if (SSEClientBConnection) {
-        SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData });
+        SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData, question });
         await handleDisconnect(data.userB, matchingQueue);
         SSEClientBConnection.close();
     }

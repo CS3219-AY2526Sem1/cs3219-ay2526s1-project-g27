@@ -28,7 +28,8 @@ import { useAuth } from '@/context/AuthContext';
 // TODO: remove user from matching api + consider how the state can be kept whenever user is in the queue when navigate between pages
 export default function MatchingPage() {
   const difficulties = ['Easy', 'Medium', 'Hard'];
-  const topics = ['Arrays', 'Strings', 'Dynamic Programming', 'Graphs', 'Trees', 'Sorting'];
+  const topics = ['Arrays', 'Strings', 'Dynamic Programming', 'Graphs', 'Trees', 'Sorting', 'Data Structures',
+            'Algorithms'];
 
   //@ts-ignore
   const { isMatching, timer, showError, errorMessage, showAcceptMatch, matchFound, topic, difficulty, setTopic, setDifficulty, startMatching, stopMatching, acceptMatch } = useMatching();
