@@ -163,7 +163,21 @@ const finalizeMatch = async(matchId, data, matchingQueue, topic, difficulty) => 
     axios.post(MATCH_START_ENDPOINT).catch((error) => {
         console.log(error);
     });;
-    console.log(`Posted match start request to ${MATCH_START_ENDPOINT}`)
+    console.log(`Posted match start request to ${MATCH_START_ENDPOINT}`)    
+    
+    // record question attempt for both users
+    try {
+     const response = await axios.post("http://question-service:3013/question/attempt", {
+            UserId1: data.userA,
+            UserId2: data.userB,
+            question: question
+        });
+       console.log('Question attempt recorded', response);
+    } catch (error) {
+        console.error("Error recording question attempt:", error);
+        throw error;
+    }
+
     const isMatchDeleted = await redisDB.exists(matchId) < 1 ? true : false;
     console.log('is delete successful', isMatchDeleted);
 }

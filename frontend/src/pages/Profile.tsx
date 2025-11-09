@@ -18,7 +18,8 @@ interface EditableProfileData {
 }
 
 const ProfilePage: FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuth();  
+  const [attempts, setAttempts] = useState<any[]>([]);
 
   // --- State Management ---
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -327,6 +328,34 @@ export const ProfilePageSkeleton: FC = () => {
             <Skeleton className="h-5 w-full rounded-md" />
             <Skeleton className="h-5 w-3/4 rounded-md" />
           </div>
+        </div>
+
+        {/* <div>
+          {attempts}
+        </div> */}
+        {/* Attempt history section */}
+         <div className="p-4">
+          <h2 className="text-lg font-bold mb-4">Question Attempts</h2>
+          <table className="w-full border">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border p-2">Question</th>
+                <th className="border p-2">Difficulty</th>
+                <th className="border p-2"> Categories</th>
+                <th className="border p-2">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {attempts.map(a => (
+                <tr key={a._id}>
+                  <td className="border p-2">{a.QuestionTitle}</td>
+                  <td className="border p-2">{a.Difficulty}</td>
+                  <td className="border p-2">{a.Categories.join(', ')}</td>
+                  <td className="border p-2">{new Date(a.AttemptedAt).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
