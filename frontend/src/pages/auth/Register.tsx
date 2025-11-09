@@ -1,3 +1,6 @@
+import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import RegisterForm from "@/components/RegisterForm"
 import {
   Card,
@@ -8,6 +11,14 @@ import {
 } from "@/components/ui/card"
 
 export default function RegisterPage() {
+  const { isAuthenticated } = useAuth(); 
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/", { replace: true }); 
+    }
+  }, [isAuthenticated, navigate]);
+
   return (
     <div className="flex w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm flex flex-col gap-8">

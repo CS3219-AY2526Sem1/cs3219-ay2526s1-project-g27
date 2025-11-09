@@ -126,14 +126,7 @@ export default function FloatingChat({ matchToken }: CollaborativeChatProps) {
       {/* Header / Toggle */}
       <div
         onClick={() => matchState && setIsOpen(!isOpen)}
-        style={{
-          backgroundColor: '#007bff',
-          color: '#fff',
-          padding: '10px',
-          cursor: 'pointer',
-          fontWeight: 'bold',
-          textAlign: 'center',
-        }}
+        className="bg-chatbar text-white p-2.5 cursor-pointer font-bold text-center"
       >
         {isOpen ? 'Chat' : '💬'}
       </div>
@@ -143,33 +136,18 @@ export default function FloatingChat({ matchToken }: CollaborativeChatProps) {
         <>
           <div
             ref={messagesContainerRef}
-            style={{
-              flex: 1,
-              padding: '10px',
-              overflowY: 'auto',
-              backgroundColor: '#f9f9f9',
-            }}
+            className="flex-1 p-2.5 overflow-y-auto bg-[#f9f9f9]"
           >
             {messages.map((msg, i) => {
               const isSelf = msg.userId === user?.id;
               return (
                 <div
                   key={i}
-                  style={{
-                    display: 'flex',
-                    justifyContent: isSelf ? 'flex-end' : 'flex-start',
-                    marginBottom: '6px',
-                  }}
+                  className={`flex mb-1.5 ${isSelf ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    style={{
-                      backgroundColor: isSelf ? '#007bff' : '#e0e0e0',
-                      color: isSelf ? '#fff' : '#000',
-                      padding: '8px 12px',
-                      borderRadius: '12px',
-                      maxWidth: '70%',
-                      wordBreak: 'break-word',
-                    }}
+                    className={`py-2 px-3 rounded-xl max-w-[70%] break-word 
+                      ${isSelf ? 'bg-chatbar text-white' : 'bg-[#e0e0e0] text-black'}`}
                   >
                     {!isSelf && <strong>{msg.displayName}:</strong>} {msg.text}
                   </div>
@@ -182,28 +160,17 @@ export default function FloatingChat({ matchToken }: CollaborativeChatProps) {
           {/* Input */}
           <form
             onSubmit={handleSubmit}
-            style={{ display: 'flex', borderTop: '1px solid #ddd' }}
+            className="flex border-t border-[#ddd]"
           >
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type..."
-              style={{
-                flex: 1,
-                padding: '8px',
-                border: 'none',
-                outline: 'none',
-              }}
+              className="flex-1 p-2 border-none outline-none focus:ring-0"
             />
             <button
               type="submit"
-              style={{
-                backgroundColor: '#007bff',
-                color: '#fff',
-                border: 'none',
-                padding: '8px 12px',
-                cursor: 'pointer',
-              }}
+              className="bg-chatbar text-white border-none py-2 px-3 cursor-pointer hover:bg-opacity-90"
             >
               Send
             </button>
@@ -212,7 +179,7 @@ export default function FloatingChat({ matchToken }: CollaborativeChatProps) {
       )}
 
       {!matchState && (
-        <p style={{ padding: '10px', textAlign: 'center' }}>Match has ended</p>
+        <p className="p-2.5 text-center">Match has ended</p>
       )}
     </div>
   );
