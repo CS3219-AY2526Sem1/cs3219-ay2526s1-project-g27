@@ -1,3 +1,12 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT 5 date: 2025-9-29 15:30
+Tool: Gemini 2.5 Flash date: 2025-10-12 18:00
+Scope: 
+- Recommended flow of logic when users accept match
+Author review: 
+- Followed recommended logic flow and functions provided for their respective responsibility
+*/
 
 const { redisDB } = require('../config/redis');
 const { handleDisconnect } = require('../sse/disconnectHandler');

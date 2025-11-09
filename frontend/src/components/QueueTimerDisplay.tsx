@@ -1,3 +1,13 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT 5 / Claude Sonnet 4.5 / Gemini 2.5 Flash date: 2025-10-13 12:30
+Scope: 
+- Request for a timer at the application screen such that navigating across different pages
+continues to display the match timer
+Author review: 
+- Verfied for correctness by testing
+*/
+
 import { useMatching } from "@/context/MatchContext";
 
 export default function QueueTimerDisplay() {

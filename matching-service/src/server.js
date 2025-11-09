@@ -1,3 +1,12 @@
+/*
+AI Assistance Disclosure:
+Tool: Gemini 2.5 Flash date: 2025-10-12 18:00
+Scope: 
+- Advise on how I should be refactoring code in server.js to other files for readability and maintainability.
+Author review: 
+- Followed recommended file structure and refactor code
+*/
+
 const express = require("express");
 const { createBullBoard } = require("@bull-board/api");
 const { BullMQAdapter } = require("@bull-board/api/bullMQAdapter");
