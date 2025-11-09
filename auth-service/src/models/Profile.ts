@@ -1,6 +1,30 @@
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  createdAt: Date; 
+  updatedAt: Date;
+  currentRating: number;
+};
+
+export const UserSchema = z.object({
+  name: z.string(),
+  email: z.string(),
+  emailVerified: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  currentRating: z.number().int()
+});
+
+type UserData = z.infer<typeof UserSchema>
+export interface UserAuth extends UserData {
+  _id: ObjectId;
+}
+
 export const solvedProblemSchema = z.object({
   problemId: z.string(),
   solvedAt: z.date(),

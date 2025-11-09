@@ -14,23 +14,21 @@ const client = new MongoClient(process.env.DB_LOCAL_URI as string);
 const db = client.db(process.env.DB_NAME as string);
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+
 export type User = {
   id: string;
-  email: string;
   name: string;
+  email: string;
   emailVerified: boolean;
-  image: string;
   createdAt: Date; 
   updatedAt: Date;
-  handle: string;
   currentRating: number;
 };
 
 
-
 export const auth = betterAuth({
   trustedOrigins: [process.env.FRONTEND_URL as string, process.env.BASE_URL as string, 'http://localhost:5173'],
-  baseURL: process.env.AUTH_SERVICE_BASE_URL || "http://auth-service:8000", 
+  baseURL:  process.env.FRONTEND_URL as string, 
 
   emailAndPassword: {
     enabled: true,
@@ -75,10 +73,15 @@ export const auth = betterAuth({
       user: { email: string; name: string };
       url: string;
     }) => {
+      
+
       const frontendUrl = new URL(url);
-      frontendUrl.host = new URL(process.env.FRONTEND_URL as string).host;
+      frontendUrl.protocol = "http:";
+      frontendUrl.hostname = "localhost";
+      frontendUrl.port = "80"; // your frontend dev port
+      const verificationLink = frontendUrl.toString();
       const emailHtml = await render(
-        VerificationEmail({ userName: user.name,verificationUrl: frontendUrl.toString()})
+        VerificationEmail({ userName: user.name,verificationUrl: verificationLink})
       );
 
       await resend.emails.send({

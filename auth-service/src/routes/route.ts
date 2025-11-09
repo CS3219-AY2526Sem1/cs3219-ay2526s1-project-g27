@@ -18,7 +18,7 @@ userRouter.get("/:id/profile", requireAuth, requireOwnership, ProfileController.
 userRouter.post("/:id/profile", requireAuth, requireOwnership, ProfileController.createProfile);
 
 // PUT /api/v1/users/:id/profile - Update user profile (protected)
-userRouter.put("/:id/profile", requireAuth, requireOwnership, ProfileController.updateProfile);
+userRouter.put("/:id/profile", requireAuth, requireOwnership, ProfileController.patchProfile);
 
 // DELETE /api/v1/users/:id/profile - Delete user profile (protected)
 // userRouter.delete("/:id/profile", requireAuth, requireOwnership, ProfileController.deleteProfile);

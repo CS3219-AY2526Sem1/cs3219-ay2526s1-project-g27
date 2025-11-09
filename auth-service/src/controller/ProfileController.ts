@@ -1,7 +1,7 @@
 
 /*
 AI Assistance Disclosure:
-Tool: ChatGPT (model: GPT‑5) date: 2025-9-14, 2025-9-20, 2025-10-05
+Tool: ChatGPT (model: GPT‑5) date: 2025-9-14, 2025-9-25, 2025-11-09
 Scope: 
 - Generated initial code
 - Added boilerplate code for some endpoints based on schema
@@ -12,8 +12,9 @@ Author review:
 
 
 import { Request, Response } from "express";
-import { getProfileCollection } from "../lib/db";
-
+import { getProfileCollection, getUserCollection } from "../lib/db";
+import { auth } from "../lib/auth";
+import { ObjectId } from "mongodb";
 import {
   profileSchema,
   CreateProfileInput,
@@ -23,6 +24,7 @@ import {
 import { z } from "zod";
 
 const updateProfileSchema = z.object({
+  username: z.string().optional(), 
   handles: z.array(z.string()).optional(),
   biography: z.string().optional(),
   problemsSolved: z.array(solvedProblemSchema).optional(),
@@ -106,114 +108,146 @@ export class ProfileController {
     }
   }
 
+  // PUT /api/v1/users/:id/profile - Update user profile
   static async patchProfile(req: Request, res: Response): Promise<void> {
     try {
-        const { id } = req.params; // This is the Better Auth user ID
+      const { id } = req.params;
 
-        // 1. Validate the incoming request body
-        const validation = updateProfileSchema.safeParse(req.body);
+      // 1. Validate the user ID format
+      if (!ObjectId.isValid(id)) {
+        res.status(400).json({ error: "Invalid user ID format" });
+        return;
+      }
 
-        if (!validation.success) {
-            res.status(400).json({
-                error: "Validation error",
-                details: validation.error,
-            });
+      // 2. Validate the incoming request body against your Zod schema
+      const validation = updateProfileSchema.safeParse(req.body);
+      if (!validation.success) {
+        res.status(400).json({
+          error: "Validation error",
+          details: validation.error.flatten(),
+        });
+        return;
+      }
+
+      // 3. Separate username from other profile data
+      const { username, ...otherProfileData } = validation.data;
+      const userObjectId = new ObjectId(id);
+
+      // 4. Update the username in the 'users' collection if a new one is provided
+      if (username) {
+        const userCollection = getUserCollection();
+        try {
+          const userUpdateResult = await userCollection.findOneAndUpdate(
+            { _id: userObjectId },
+            { $set: { name: username, updatedAt: new Date() } }
+          );
+
+          // If no document was found to update, the user doesn't exist.
+          if (!userUpdateResult?._id) {
+            res.status(404).json({ error: "User not found" });
             return;
+          }
+        } catch (error) {
+          console.error("Error updating username in users collection:", error);
+          res.status(500).json({ error: "Failed to update username" });
+          return;
         }
+      }
 
-        const validatedData = validation.data;
-
-        // 2. Check if there is anything to update
-        if (Object.keys(validatedData).length === 0) {
-            res.status(400).json({ error: "No fields to update provided" });
-            return;
-        }
-
-        // 3. Prepare the data for MongoDB
-        const updateFields: any = {
-            ...validatedData,
-            updatedAt: new Date(),
+      // 5. Update the rest of the profile data in the 'profiles' collection
+      const profilesCollection = getProfileCollection();
+      if (Object.keys(otherProfileData).length > 0) {
+        const updateFields = {
+          ...otherProfileData,
+          updatedAt: new Date(),
         };
 
-        const profilesCollection = getProfileCollection();
-
-        // 4. Find the user profile and update it
-        const result = await profilesCollection.findOneAndUpdate(
-            { userId: id },
-            { $set: updateFields },
-            { returnDocument: "after" } // This option returns the updated document
+        await profilesCollection.findOneAndUpdate(
+          { userId: id }, // In the profiles collection, userId is a string
+          { $set: updateFields }
         );
+      }
 
-        // 5. Handle the case where the profile is not found
-        if (!result) {
-            res.status(404).json({ error: "Profile not found" });
-            return;
-        }
-
-        // 6. Send the successful response
-        res.status(200).json({
-            message: "Profile updated successfully",
-            data: result,
-        });
-    } catch (error) {
-        // Handle potential Zod errors if not using safeParse
-        if (error instanceof z.ZodError) {
-            res.status(400).json({
-                error: "Validation error",
-                details: error,
-            });
-            return;
-        }
-        console.error("Error updating profile:", error);
-        res.status(500).json({ error: "Internal server error" });
-    }
-  }
-
-  // PUT /api/v1/users/:id/profile - Update user profile
-  static async updateProfile(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params; // Better Auth user ID
-
-      const profilesCollection = getProfileCollection();
-
-      // Prepare update data
-      const updateData: UpdateProfileInput = {
-        handle: req.body.handle,
-        currentRating: req.body.currentRating,
-        problemsSolved: req.body.problemsSolved,
-        updatedAt: new Date(),
-      };
-
-      // Remove undefined fields
-      const filteredUpdate = Object.fromEntries(
-        Object.entries(updateData).filter(([_, v]) => v !== undefined)
-      );
-
-      if (Object.keys(filteredUpdate).length === 0) {
-        res.status(400).json({ error: "No valid fields to update" });
+      // 6. Fetch the complete, updated documents from both collections
+      const updatedProfile = await profilesCollection.findOne({ userId: id });
+      if (!updatedProfile) {
+        // This case might happen if a user exists but has no profile document yet.
+        // Depending on your application logic, you might want to create one here.
+        res.status(404).json({ error: "Profile not found after update" });
         return;
       }
 
-      const result = await profilesCollection.findOneAndUpdate(
-        { userId: id },
-        { $set: filteredUpdate },
-        { returnDocument: "after" }
-      );
+      const updatedUser = await getUserCollection().findOne({ _id: userObjectId });
 
-      if (!result) {
-        res.status(404).json({ error: "Profile not found" });
-        return;
-      }
-
+      // 7. Send the successful response with the combined, updated data
       res.status(200).json({
         message: "Profile updated successfully",
-        data: result,
+        data: {
+          ...updatedProfile,
+          // Ensure the latest username from the users collection is sent back
+          username: updatedUser?.name,
+        },
       });
+
     } catch (error) {
+      // Catch Zod validation errors specifically
+      if (error instanceof z.ZodError) {
+        res.status(400).json({
+          error: "Validation error",
+          details: error,
+        });
+        return;
+      }
       console.error("Error updating profile:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   }
+
+
+  // NO LONGER USED 
+  // static async updateProfile(req: Request, res: Response): Promise<void> {
+  //   try {
+  //     const { id } = req.params; // Better Auth user ID
+
+  //     const profilesCollection = getProfileCollection();
+
+  //     // Prepare update data
+  //     const updateData: UpdateProfileInput = {
+  //       currentRating: req.body.currentRating,
+  //       problemsSolved: req.body.problemsSolved,
+  //       updatedAt: new Date(),
+  //     };
+
+  //     // Remove undefined fields
+  //     const filteredUpdate = Object.fromEntries(
+  //       Object.entries(updateData).filter(([_, v]) => v !== undefined)
+  //     );
+
+  //     if (Object.keys(filteredUpdate).length === 0) {
+  //       res.status(400).json({ error: "No valid fields to update" });
+  //       return;
+  //     }
+
+  //     const result = await profilesCollection.findOneAndUpdate(
+  //       { userId: id },
+  //       { $set: filteredUpdate },
+  //       { returnDocument: "after" }
+  //     );
+
+  //     if (!result) {
+  //       res.status(404).json({ error: "Profile not found" });
+  //       return;
+  //     }
+
+  //     res.status(200).json({
+  //       message: "Profile updated successfully",
+  //       data: result,
+  //     });
+  //   } catch (error) {
+  //     console.error("Error updating profile:", error);
+  //     res.status(500).json({ error: "Internal server error" });
+  //   }
+  // }
 
   // DELETE /api/v1/users/:id/profile - Delete user profile
   static async deleteProfile(req: Request, res: Response): Promise<void> {

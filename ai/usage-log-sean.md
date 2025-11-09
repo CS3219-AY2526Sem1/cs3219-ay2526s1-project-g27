@@ -178,3 +178,19 @@ Given the nginx config and docker-compose, write me the kubernetes config files 
 # Author Notes:
 Modified to use own files, changed some settings like memory etc
 
+
+# Date / Time
+9-11-2025
+# Tool:
+Gemini Pro 2.5 and Claude Sonnet 4.5
+
+# Prompt / Command / Description:
+Change the API endpoints based on the DB schema change myself
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+
+# Author Notes:
+Modified to use own DB and types.
