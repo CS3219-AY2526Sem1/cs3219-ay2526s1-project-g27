@@ -7,8 +7,6 @@ Author review:
 - Verfied for correctness by reading code
 */
 
-import { useState } from "react";
-
 import { CollaborativeEditor } from '@/components/collab/Editor';
 import FloatingChat from '@/components/chat/Chat'
 
@@ -16,14 +14,10 @@ export default function CollaborationPage() {
 
   const matchToken = localStorage.getItem('matchToken');
   const question = JSON.parse(localStorage.getItem("question") || "{}");
-  const [language, setLanguage] = useState<"python3" | "cpp" | "javascript">("python3");
 
   if (!matchToken) {
       return <div><p> ERROR! Did not receive a Match Token</p></div>
   }
-  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-      setLanguage(event.target.value as "python3" | "cpp" | "javascript");
-  };
 
   return (
     <div className="flex h-screen">
@@ -34,14 +28,14 @@ export default function CollaborationPage() {
             <h3 className="text-lg font-bold mb-2">{question.QuestionTitle}</h3>
             <p className="text-gray-700 mb-4">{question.QuestionDescription}</p>
             <div className="text-sm text-gray-600 mb-2">
-              <strong>Difficulty:</strong> {question.QuestionComplexity}
+              <b>Difficulty:</b> {question.QuestionComplexity}
             </div>
             <div className="text-sm text-gray-600 mb-2">
-              <strong>Categories:</strong>{" "}
+              <b>Categories:</b>{" "}
               {question.QuestionCategories?.join(", ")}
             </div>
             <div className="text-sm text-gray-600">
-              <strong>Score:</strong> {question.questionScore}
+              <b>Score:</b> {question.questionScore}
             </div>
           </div>
           ) : (
@@ -51,14 +45,8 @@ export default function CollaborationPage() {
 
       {/* Collab col */}
       <div className="flex-2 p-6">
-        <CollaborativeEditor matchToken={matchToken} language={language}/>
+        <CollaborativeEditor matchToken={matchToken}/>
       </div>
-      <select id="dropdown" value={language} onChange={handleLanguageChange}>
-        <option value="">--Please choose--</option>
-        <option value="python3">Python 3</option>
-        <option value="cpp">C++</option>
-        <option value="javascript">Javascript</option>
-      </select>
       <FloatingChat matchToken={matchToken}/>
     </div>
   );
