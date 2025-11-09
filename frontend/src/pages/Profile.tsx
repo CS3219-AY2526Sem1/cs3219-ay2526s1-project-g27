@@ -292,7 +292,7 @@ const ProfilePage: FC = () => {
         <div className="p-6 border rounded-lg bg-white">
           <h2 className="text-2xl font-bold mb-4">User Statistics</h2>
           <div className="text-gray-600 space-y-2">
-            <p>Questions Completed: {profile?.problemsSolved?.length ?? 0}</p>
+            <p>Questions: {attempts?.length ?? 0}</p>
             <p>Member since: {profile ? new Date(profile.createdAt).toLocaleDateString() : '...'}</p>
           </div>
         </div>

@@ -96,7 +96,6 @@ export const auth = betterAuth({
         const profileCollection = db.collection("profiles");
         await profileCollection.insertOne({
           userId: user.id,
-          handle: (user as any).handle || null,
           currentRating: 1000,
           problemsSolved: [],
           createdAt: new Date(),
@@ -114,11 +113,6 @@ export const auth = betterAuth({
 
   user: {
     additionalFields: {
-      handle: {
-        type: "string",
-        required: false,
-        input: true 
-      },
       currentRating: {
         type: "number",
         required: true,
@@ -136,7 +130,6 @@ export const auth = betterAuth({
             const profileCollection = db.collection("profiles");
             await profileCollection.insertOne({
               userId: user.id,
-              handle: (user as any).handle || null,
               currentRating: 1000,
               problemsSolved: [],
               createdAt: new Date(),

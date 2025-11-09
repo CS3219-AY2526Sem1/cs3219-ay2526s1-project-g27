@@ -13,7 +13,6 @@ Author review:
 
 import { Request, Response } from "express";
 import { getProfileCollection, getUserCollection } from "../lib/db";
-import { auth } from "../lib/auth";
 import { ObjectId } from "mongodb";
 import {
   profileSchema,

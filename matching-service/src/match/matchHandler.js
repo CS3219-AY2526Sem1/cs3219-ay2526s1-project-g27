@@ -172,6 +172,7 @@ const finalizeMatch = async(matchId, data, matchingQueue, topic, difficulty) => 
             UserId2: data.userB,
             question: question
         });
+
        console.log('Question attempt recorded', response);
     } catch (error) {
         console.error("Error recording question attempt:", error);
