@@ -1,3 +1,17 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5) date: 2025-9-14, 2025-9-25, 2025-10-15
+Scope: 
+- Generated initial code
+- Constant changing the UI 
+- Writing frontend code based on iterated changes
+- Debugging 
+Author review: 
+- Verfied for correctness by reading code
+- Tested using local 
+*/
+
+
 // src/pages/ProfilePage.tsx
 
 import { type FC, useState, useEffect, useCallback } from 'react';
@@ -7,8 +21,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import apiClient from '@/api/apiClient'; 
-import { type UserProfile, type UpdateProfilePayload } from '@/types'; 
+import apiClient from '@/api/apiClient';
+import { type UserProfile, type UpdateProfilePayload } from '@/types';
+
+// Define a type for a single question attempt for better type safety
+interface QuestionAttempt {
+  _id: string;
+  QuestionTitle: string;
+  Difficulty: string;
+  Categories: string[];
+  AttemptedAt: string; // Keep as string for initial fetch
+}
 
 // Define the shape of the data being edited
 interface EditableProfileData {
@@ -18,17 +41,19 @@ interface EditableProfileData {
 }
 
 const ProfilePage: FC = () => {
-  const { user } = useAuth();  
-  const [attempts, setAttempts] = useState<any[]>([]);
+  const { user } = useAuth();
 
   // --- State Management ---
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [attempts, setAttempts] = useState<QuestionAttempt[]>([]);
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // This variable intelligently decides which username to display
   const displayName = profile?.username || user?.username || '';
 
-  // State to hold form data while editing, now strongly typed
+  // State to hold form data while editing
   const [editableData, setEditableData] = useState<EditableProfileData>({
     username: '',
     biography: '',
@@ -39,44 +64,52 @@ const ProfilePage: FC = () => {
   const fetchProfile = useCallback(async (userId: string) => {
     setStatus('loading');
     try {
-      // 
-      const response = await apiClient.get<{ data: UserProfile }>(`/users/api/v1/users/${userId}/profile`);
-      const profileData = response.data.data;
+      const profileResponse = await apiClient.get<{ data: UserProfile }>(`/users/api/v1/users/${userId}/profile`);
+      const profileData = profileResponse.data.data;
 
       if (!profileData) {
         throw new Error("Profile data is missing in the API response.");
       }
 
-
       setProfile(profileData);
-      
+
       // Initialize the editable data with fetched profile info
       setEditableData({
-        username: profileData.username || user?.username || '', // Add this
+        username: profileData.username || user?.username || '',
         biography: profileData.biography || '',
-        // Ensure handles is always an array, even if null/undefined from API
-        handles: profileData.handles || [], 
+        handles: profileData.handles || [],
       });
       setStatus('success');
     } catch (error) {
       console.error("Failed to fetch profile:", error);
       setStatus('error');
     }
-  }, []);
+  }, [user?.username]); // Depend on user.username to re-initialize form if context changes
 
+  // Main effect to fetch all necessary data
   useEffect(() => {
     if (user?.id) {
+      // Fetch the main user profile
       fetchProfile(user.id);
+
+      // Fetch the question attempts history
+      apiClient.get<QuestionAttempt[]>(`/questions/question/attempt/${user.id}`)
+        .then(res => {
+          setAttempts(res.data);
+        })
+        .catch(err => {
+          console.error("Failed to fetch question attempts:", err);
+          // You could set a separate error state for attempts if needed
+        });
     }
-  }, [user, fetchProfile]);
+  }, [user?.id, fetchProfile]);
 
   // --- Event Handlers ---
 
   const handleEditToggle = () => {
-    // If we are entering edit mode, sync the form with the latest profile data
     if (!isEditing && profile) {
       setEditableData({
-        username: profile.username || user?.username || '', // Add this
+        username: profile.username || user?.username || '',
         biography: profile.biography || '',
         handles: [...(profile.handles || [])],
       });
@@ -89,7 +122,6 @@ const ProfilePage: FC = () => {
 
     setIsSaving(true);
     try {
-      // Filter out any empty handles and create the payload
       const payload: UpdateProfilePayload = {
         username: editableData.username,
         biography: editableData.biography,
@@ -97,24 +129,20 @@ const ProfilePage: FC = () => {
       };
 
       const response = await apiClient.put<{ data: UserProfile }>(`/users/api/v1/users/${user.id}/profile`, payload);
-      
-      // Update local state with the definitive data from the server
+
       setProfile(response.data.data);
       setIsEditing(false);
-      // Optionally: Show a success toast notification here
-      
+
     } catch (error) {
       console.error("Failed to update profile:", error);
-      // Optionally: Show an error toast notification here
     } finally {
       setIsSaving(false);
     }
   };
-  
+
   // --- Dynamic Form 'handles' Handlers ---
 
   const handleHandleChange = (index: number, value: string) => {
-    // Create a new array to ensure state immutability
     const newHandles = [...editableData.handles];
     newHandles[index] = value;
     setEditableData(prev => ({ ...prev, handles: newHandles }));
@@ -167,10 +195,7 @@ const ProfilePage: FC = () => {
                   Cancel
                 </Button>
                 <Button onClick={handleSaveClick} disabled={isSaving}>
-                  {isSaving ? 'Saving...' : <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Changes
-                  </>}
+                  {isSaving ? 'Saving...' : <><Save className="h-4 w-4 mr-2" />Save Changes</>}
                 </Button>
               </div>
             ) : (
@@ -180,34 +205,29 @@ const ProfilePage: FC = () => {
               </Button>
             )}
         </div>
-        
-        {/* Profile Details Section (JSX remains largely the same) */}
+
+        {/* Profile Details Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-6 border rounded-lg bg-white">
           <div className="md:col-span-1 flex flex-col items-center text-center">
             <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center mb-4">
-
               <span className="text-4xl font-semibold text-gray-500">
-                {getInitials(user!.username || 'U')} {/* Corrected to user.name */}
+                {getInitials(displayName || 'U')}
               </span>
             </div>
              {isEditing ? (
                 <Input
                   value={editableData.username}
                   onChange={(e) => setEditableData(prev => ({ ...prev, username: e.target.value }))}
-                  className="text-2xl font-bold text-center mt-2" 
+                  className="text-2xl font-bold text-center mt-2"
                   disabled={isSaving}
                   placeholder="Enter your username"
                 />
               ) : (
                 <h2 className="text-2xl font-bold">{displayName}</h2>
               )}
-              
-              <p className="text-gry-500">{user!.email}</p>
+              <p className="text-gray-500">{user!.email}</p>
             </div>
 
-
-            
-          
           <div className="md:col-span-2 space-y-6">
             <div>
               <h3 className="font-semibold text-lg mb-2">Biography</h3>
@@ -225,7 +245,7 @@ const ProfilePage: FC = () => {
                 </p>
               )}
             </div>
-            
+
             <div>
               <h3 className="font-semibold text-lg mb-2">Social Handles</h3>
               {isEditing ? (
@@ -276,6 +296,37 @@ const ProfilePage: FC = () => {
             <p>Member since: {profile ? new Date(profile.createdAt).toLocaleDateString() : '...'}</p>
           </div>
         </div>
+
+        {/* --- NEW: Attempt History Section --- */}
+        <div className="p-6 border rounded-lg bg-white">
+          <h2 className="text-2xl font-bold mb-4">Question Attempts</h2>
+          {attempts.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border-b p-2">Question</th>
+                    <th className="border-b p-2">Difficulty</th>
+                    <th className="border-b p-2">Categories</th>
+                    <th className="border-b p-2">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attempts.map(a => (
+                    <tr key={a._id} className="hover:bg-gray-50">
+                      <td className="border-b p-2">{a.QuestionTitle}</td>
+                      <td className="border-b p-2">{a.Difficulty}</td>
+                      <td className="border-b p-2">{a.Categories.join(', ')}</td>
+                      <td className="border-b p-2">{new Date(a.AttemptedAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-400">No question attempts recorded yet.</p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -285,44 +336,33 @@ export const ProfilePageSkeleton: FC = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-3xl space-y-12">
-        {/* --- Header Skeleton --- */}
+        {/* Header Skeleton */}
         <div className="flex justify-between items-start">
-          {/* "My Profile" heading */}
           <Skeleton className="h-10 w-48 rounded-md" />
-          {/* "Edit Profile" button */}
           <Skeleton className="h-10 w-32 rounded-md" />
         </div>
 
-        {/* --- Profile Details Section Skeleton --- */}
+        {/* Profile Details Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-6 border rounded-lg bg-white">
-          {/* Left Column: Avatar and basic info */}
           <div className="md:col-span-1 flex flex-col items-center text-center space-y-3">
             <Skeleton className="h-32 w-32 rounded-full" />
             <Skeleton className="h-8 w-40 rounded-md" />
             <Skeleton className="h-5 w-48 rounded-md" />
-            <Skeleton className="h-4 w-24 rounded-md mt-2" />
           </div>
-
-          {/* Right Column: Biography and Handles */}
           <div className="md:col-span-2 space-y-8">
-            {/* Biography */}
             <div className="space-y-2">
               <Skeleton className="h-6 w-32 rounded-md" />
               <Skeleton className="h-24 w-full rounded-md" />
             </div>
-
-            {/* Social Handles */}
             <div className="space-y-2">
               <Skeleton className="h-6 w-40 rounded-md" />
-              <Skeleton className="h-10 w-full rounded-md" />
               <Skeleton className="h-10 w-full rounded-md" />
             </div>
           </div>
         </div>
 
-        {/* --- User Statistics Section Skeleton --- */}
+        {/* User Statistics Skeleton */}
         <div className="p-6 border rounded-lg bg-white">
-          {/* "User Statistics" heading */}
           <Skeleton className="h-8 w-56 mb-6 rounded-md" />
           <div className="space-y-3">
             <Skeleton className="h-5 w-full rounded-md" />
@@ -330,37 +370,18 @@ export const ProfilePageSkeleton: FC = () => {
           </div>
         </div>
 
-        {/* <div>
-          {attempts}
-        </div> */}
-        {/* Attempt history section */}
-         <div className="p-4">
-          <h2 className="text-lg font-bold mb-4">Question Attempts</h2>
-          <table className="w-full border">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2">Question</th>
-                <th className="border p-2">Difficulty</th>
-                <th className="border p-2"> Categories</th>
-                <th className="border p-2">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {attempts.map(a => (
-                <tr key={a._id}>
-                  <td className="border p-2">{a.QuestionTitle}</td>
-                  <td className="border p-2">{a.Difficulty}</td>
-                  <td className="border p-2">{a.Categories.join(', ')}</td>
-                  <td className="border p-2">{new Date(a.AttemptedAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* --- NEW: Attempts Table Skeleton --- */}
+        <div className="p-6 border rounded-lg bg-white">
+          <Skeleton className="h-8 w-64 mb-6 rounded-md" />
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-full rounded-md" />
+            <Skeleton className="h-10 w-full rounded-md" />
+            <Skeleton className="h-10 w-full rounded-md" />
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
 
 export default ProfilePage;
