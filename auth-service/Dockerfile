@@ -1,26 +1,36 @@
-# Stage 1: The Builder
-# This stage installs all dependencies, including devDeps, to build the project
+# ==================================
+#         STAGE 1: BUILDER
+# ==================================
+# This stage compiles the TypeScript to JavaScript
 FROM node:22-alpine AS builder
+
 WORKDIR /app
+
+# Copy package files and install ALL dependencies (including typescript, etc.)
 COPY package*.json ./
 RUN npm install
+
+# Copy the rest of the source code
 COPY . .
-# Compile TypeScript to JavaScript, placing it in the /dist folder
+
+# Run the build command (defined in package.json) to compile the code
+# This will create a 'dist' folder with the resulting JavaScript
 RUN npm run build
 
-# Stage 2: The Final Production Image
-# Start from a fresh, clean base image
+
+# ==================================
+#        STAGE 2: PRODUCTION
+# ==================================
+# This is the final, lean image that will be deployed
 FROM node:22-alpine
+
 WORKDIR /app
 
-# Set the environment to production
-ENV NODE_ENV=production
-
-# Copy package files
+# Copy package files again
 COPY package*.json ./
 
-# Install ONLY production dependencies to keep the image small
-RUN npm install --only=production
+# Install ONLY the production dependencies. This makes the image smaller.
+RUN npm install --omit=dev
 
 # Copy the compiled JavaScript code from the 'builder' stage
 COPY --from=builder /app/dist ./dist
@@ -28,5 +38,6 @@ COPY --from=builder /app/dist ./dist
 # Expose the port
 EXPOSE 8000
 
-# The command to start the server, running the compiled JavaScript
-CMD ["npm", "start"]
+# The command to run the compiled JavaScript file directly with node.
+# This is highly memory-efficient.
+CMD [ "node", "dist/server.js" ]
