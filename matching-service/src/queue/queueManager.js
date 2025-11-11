@@ -1,3 +1,19 @@
+/*
+AI Assistance Disclosure:
+Tool: Gemini 2.5 Flash date: 2025-10-12 18:00
+Tool: ChatGPT 5 Flash date: 2025-11-1
+Scope: 
+- Advise on how I should be refactoring code in server.js to other files for readability and maintainability.
+- Advise on how to check if the connection of the queue/worker/queueEvents created are ready.
+- Advise on how to prevent potential race condition
+- Modification of matching criteria to adopted weighted average calculation
+Author review: 
+- Followed recommended file structure and refactor code to prevent any circular imports
+- Followed the test code provided
+- Followed suggestion of using redis lock on critical section
+- Followed suggestion on matching criteria modificaiton
+*/
+
 const { Queue, Worker, QueueEvents } = require("bullmq");
 const { redisDB, redisOptions } = require('../config/redis');
 const { handleTentativeMatch } = require('../match/matchHandler');

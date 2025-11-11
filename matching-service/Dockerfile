@@ -1,3 +1,10 @@
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5) date: 2025-9-21
+# Scope: 
+# - Generated Dockerfile code
+# Author review: 
+# - Verfied for correctness by running Docker
+
 FROM node:22-alpine
 
 # Create app directory
