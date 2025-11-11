@@ -35,6 +35,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
 
 const WEBSOCKET_ENDPOINT = `ws://localhost/api/collab/room`;
 
@@ -72,6 +74,18 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
   const TIMEOUT_DELAY = 3000;
   const timeoutRef = useRef<NodeJS.Timeout|null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'shortDisconnect' | 'connected'>('connected');
+  
+  // Added state to trigger a reconnection attempt
+  const [retryAttempt, setRetryAttempt] = useState(0);
+
+  // Added handler for the "Retry" button
+  const handleRetry = () => {
+    console.log("Attempting to reconnect...");
+    // Set status to "reconnecting" to hide the modal immediately
+    setConnectionStatus('shortDisconnect');
+    // Trigger the useEffect to re-initialize the connection
+    setRetryAttempt(prev => prev + 1);
+  };
 
   const handleWebsocketStatusChange = ( status : "connected" | "disconnected" | "connecting") => {
     console.log(`Status changed to ${status}`)
@@ -88,7 +102,7 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
         return;
       }
       timeoutRef.current = setTimeout(() => {
-        console.log("Long disconnect, freezing editting")
+        console.log("Long disconnect, freezing editing")
         setConnectionStatus('disconnected');
       }, TIMEOUT_DELAY);
     }
@@ -215,7 +229,7 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [matchToken, language, user, jwt]);
+  }, [matchToken, language, user, jwt, retryAttempt]); 
   
   useEffect( () => { // Handle disconnects
     // Dispatch readonly
@@ -262,6 +276,30 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
     partnerStatusText = 'Active';
   }
   
+  // --- Conditional Rendering ---
+  // If disconnected, show the modal. Otherwise, show the editor.
+  if (connectionStatus === 'disconnected') {
+    return (
+      <div className="flex h-[400px] w-full flex-col items-center justify-center rounded-md border border-navbar bg-navbar p-6">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-8 w-8 text-black" />
+          <h2 className="text-2xl font-semibold text-black">Connection Lost</h2>
+        </div>
+        <p className="mt-2 text-center text-black">
+          You've been disconnected from the session. Please check your internet
+          connection.
+        </p>
+        <Button
+          onClick={handleRetry}
+          variant="outline"
+          className="mt-6 text-black"
+        >
+          Retry Connection
+        </Button>
+      </div>
+    );
+  }
+  
   return (
     <div className="w-full">
       {/* Header section with controls and status */}
@@ -305,7 +343,13 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
       </div>
 
       {/* Main Editor */}
-      <div ref={editorRef} className="border border-[#ccc] h-[400px] rounded-md"/>
+      {/* Added opacity transition for the "shortDisconnect" state */}
+      <div 
+        ref={editorRef} 
+        className={`border border-[#ccc] h-[400px] rounded-md transition-opacity ${
+          connectionStatus === 'shortDisconnect' ? 'opacity-60' : 'opacity-100'
+        }`}
+      />
     </div>
   )
 };
