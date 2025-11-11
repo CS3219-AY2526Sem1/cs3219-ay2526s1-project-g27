@@ -1,6 +1,6 @@
 /*
 AI Assistance Disclosure:
-Tool: ChatGPT (model: Gemini 2.5 Pro) date: 2025‑11-08
+Tool: Gemini 2.5 Pro date: 2025‑11-08
 Scope: 
 - Generated simple loading spinner for UI
 Author review: 

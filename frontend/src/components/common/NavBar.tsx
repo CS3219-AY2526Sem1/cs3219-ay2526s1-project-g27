@@ -1,3 +1,13 @@
+/*
+AI Assistance Disclosure:
+Tool: Gemini 2.5 Pro date: 2025‑10‑07
+Scope: 
+- Generated initial UI
+Author review: 
+- Modified code to use correct styling
+- Verified by testing code
+*/
+
 import { NavLink } from "react-router-dom";
 import { useAuth } from '@/context/AuthContext';
 import QueueTimerDisplay from "../QueueTimerDisplay";

@@ -1,3 +1,14 @@
+/*
+AI Assistance Disclosure:
+Tool: Gemini 2.5 Pro date: 2025‑10‑07
+Scope: 
+- Introduced Zod validation schema integration
+Author review: 
+- Rewrote code around the custom requirements of users' particulars
+(e.g. minimum/maximum password length, valid email regex format)
+- Verified by testing code
+*/
+
 import { useState } from "react"; 
 import { useForm } from "react-hook-form";
 import { z } from "zod";
