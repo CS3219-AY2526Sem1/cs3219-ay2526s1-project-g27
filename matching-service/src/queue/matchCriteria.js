@@ -1,3 +1,12 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT 5 Flash date: 2025-11-1
+Scope:
+- Modification of matching criteria to adopted weighted average calculation
+Author review:
+- Followed suggestion on matching criteria modificaiton
+*/
+
 function executeMatchingAlgorithm(allJobsInQueue, jobInProcess) {
     const { topic, difficulty } = jobInProcess.data;
     const { attemptsMade } = jobInProcess;
