@@ -3,9 +3,6 @@ import { useAuth } from '@/context/AuthContext'
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 
-
-
-
 const HomePage: FC = () => {
   const { user, jwt, logout } = useAuth();
 
