@@ -22,7 +22,7 @@ export default function CollaborationPage() {
   return (
     <div className="flex h-screen">
       <div className="flex-1 border-r border-gray-300 p-6 overflow-y-auto">
-        <h2 className="text-xl font-semibold mb-4">Question</h2>
+        <h1 className="text-xl font-semibold mb-4">Question</h1>
         {question ? (
           <div>
             <h3 className="text-lg font-bold mb-2">{question.QuestionTitle}</h3>
