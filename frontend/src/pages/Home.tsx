@@ -1,61 +1,69 @@
 import { type FC } from 'react';
-import { useAuth } from '@/context/AuthContext'
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { useAuth } from '@/context/AuthContext';
+import { Code, MessageCircle, Users } from 'lucide-react';
 
 const HomePage: FC = () => {
-  const { user, jwt, logout } = useAuth();
+  // Use the auth context for the user's name
+  const { user } = useAuth();
 
   return (
-    <div className="flex h-screen items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader>
-          <h1 className="text-2xl font-bold text-center mb-2">User Dashboard (Debug)</h1>
-          <p className="text-center text-gray-500 text-sm">
-            This page displays your user session details.
+    <div className="flex h-screen w-full flex-col items-center justify-center p-8 text-center">
+      <div className="max-w-3xl">
+        
+        {/* App Name & Personalized Welcome */}
+        <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
+          Welcome to PeerPrep
+        </h1>
+        {user && (
+          <p className="mt-4 text-lg">
+            Hello, {user.username || user.email}!
           </p>
-        </CardHeader>
+        )}
 
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex justify-between border-b pb-2">
-              <span className="font-semibold text-gray-700">User ID:</span>
-              <span className="text-gray-600">{user!.id}</span>
-            </div>
+        {/* Tagline */}
+        <p className="mt-6 text-xl leading-8">
+          Peerprep offers a seamless way to prepare for live coding interviews. Connect with
+          peers, solve problems, and land your dream job—together.
+        </p>
 
-            <div className="flex justify-between border-b pb-2">
-              <span className="font-semibold text-gray-700">Email:</span>
-              <span className="text-gray-600">{user!.email}</span>
+        {/* Features Section */}
+        <div className="mt-12 grid grid-cols-1 gap-y-10 gap-x-8 sm:grid-cols-3">
+          <div className="flex flex-col items-center">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-navbar">
+              <Users className="h-6 w-6 text-black" aria-hidden="true" />
             </div>
-
-            {user!.username && (
-              <div className="flex justify-between border-b pb-2">
-                <span className="font-semibold text-gray-700">Username:</span>
-                <span className="text-gray-600">{user!.username}</span>
-              </div>
-            )}
-
-            <div className="flex justify-between border-b pb-2">
-              <span className="font-semibold text-gray-700">Authenticated:</span>
-              <span className="text-green-600 font-medium">Yes ✅</span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
-              <span className="font-semibold text-gray-700">Json Web Token:</span>
-              <span className="text-green-600 font-medium">{jwt?.substring(0, 10)}</span>
-            </div>
+            <h3 className="text-lg font-semibold">Peer Matching</h3>
+            <p className="mt-2 text-sm">
+              Find the perfect partner at your skill level.
+            </p>
           </div>
-        </CardContent>
 
-        <CardFooter className="flex justify-center pt-4">
-          <Button
-            variant="destructive"
-            onClick={logout}
-            className="w-full"
-          >
-            Logout
-          </Button>
-        </CardFooter>
-      </Card>
+          <div className="flex flex-col items-center">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-navbar">
+              <Code className="h-6 w-6 text-black" aria-hidden="true" />
+            </div>
+            <h3 className="text-lg font-semibold">Multi-Language Support</h3>
+            <p className="mt-2 text-sm">
+              Practice in JavaScript, Python, Java, C++, and more.
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-navbar">
+              <MessageCircle className="h-6 w-6 text-black" aria-hidden="true" />
+            </div>
+            <h3 className="text-lg font-semibold">Live Chat & Editors</h3>
+            <p className="mt-2 text-sm">
+              Collaborate in real-time with integrated chat.
+            </p>
+          </div>
+        </div>
+
+        {/* Call to Action & Logout */}
+        <p className="mt-12 text-xl leading-8">
+          Click 'Match' above to start matching!
+        </p>
+      </div>
     </div>
   );
 };
