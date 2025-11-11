@@ -596,7 +596,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
     const acceptMatch = () => {
         if (!userId || !matchId) return;
 
-        apiClient.post(`/matching/matches`, { userId, matchId })
+        apiClient.put(`/matching/matches/${matchId}`, { userId })
             .then(() => {
                 console.log('Match accepted');
             })

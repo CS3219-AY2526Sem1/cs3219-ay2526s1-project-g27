@@ -113,9 +113,10 @@ matchingRouter.get("/queue-events/:userId", async (req, res) => {
     }
 });
 
-matchingRouter.post("/matches", async(req, res) => {
+matchingRouter.put("/matches/:matchId", async(req, res) => {
     try {
-        const { userId, matchId } = req.body;
+        const { matchId } = req.params;
+        const { userId } = req.body;
         const isMatchExpired = await redisDB.exists(matchId) < 1 ? true : false;
         
         if (isMatchExpired) {
