@@ -91,6 +91,9 @@ export default function MatchingPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="space-y-4">
+          <h2 className="text-5xl font-bold tracking-tight sm:text-6xl">
+            Ready, set, Match!
+          </h2>
           {/* Difficulty Select */}
           <Select value={difficulty} onValueChange={setDifficulty} disabled={isMatching}>
             <SelectTrigger className="w-full h-16 text-lg bg-white border-2 border-gray-300 rounded-lg">
