@@ -194,7 +194,7 @@ const ProfilePage: FC = () => {
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
-                <Button onClick={handleSaveClick} disabled={isSaving}>
+                <Button variant="outline" onClick={handleSaveClick} disabled={isSaving}>
                   {isSaving ? 'Saving...' : <><Save className="h-4 w-4 mr-2" />Save Changes</>}
                 </Button>
               </div>
