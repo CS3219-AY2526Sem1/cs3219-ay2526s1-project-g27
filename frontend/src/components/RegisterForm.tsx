@@ -181,7 +181,7 @@ export default function RegisterForm() {
           />
 
           <Field>
-            <Button type="submit" className="w-full" disabled={isLoading || isSuccess}>
+            <Button type="submit" className="bg-navbar w-full" disabled={isLoading || isSuccess}>
               {
                 isLoading
                 ? "Signing Up..."
