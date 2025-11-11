@@ -91,8 +91,8 @@ export default function MatchingPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Ready, set, Match!
+          <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl mb-8">
+            Ready, Set, Match!
           </h2>
           {/* Difficulty Select */}
           <Select value={difficulty} onValueChange={setDifficulty} disabled={isMatching}>
@@ -187,6 +187,7 @@ export default function MatchingPage() {
                     acceptMatch();
                     setIsWaitingForPartner(true);
                   }}
+                  variant="outline"
                   className="flex-1"
                 >
                   Accept
