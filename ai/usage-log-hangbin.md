@@ -66,3 +66,20 @@ Generated code for the initial UI for the dashboard, in dark mode with purple co
 ## Author Notes:
 - Modified code for a visual (colour) schema more visually coherent with rest of application 
 - Verified by testing code
+
+
+## Date/Time:
+2025-11-11 18:05
+## Tool:
+Claude Haiku 4.5 (on Copilot)
+## Prompt/Command:
+Write documentation for the README file in sections about API docs, run books and design choices.
+## Output Summary:
+Generated 
+## Action Taken:
+- [ ] Accepted as-is
+- [X] Modified
+- [ ] Rejected
+## Author Notes:
+- Truncated irrelevant details
+- Verified by reading the documentation from top to bottom
