@@ -52,9 +52,11 @@ export default function LoginForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const result = await login(values);
     if (result.error) {
-      const errorMessage = result.error.message === "Invalid email or password"
+      const errorMessage = (result.error.message === "Invalid email or password"
         ? result.error.message
-        : "An unknown error occured.";
+        : result.error.code === "EMAIL_NOT_VERIFIED"
+          ? "Check your email to verify your account."
+          : "An unknown error occured.");
       form.setError("root", {
         message: errorMessage,
       });
