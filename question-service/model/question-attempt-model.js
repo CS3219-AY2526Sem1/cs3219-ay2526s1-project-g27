@@ -3,11 +3,7 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const QuestionAttemptModelSchema = new Schema({
-  Username: {
-    type: String,
-    required: true,
-  },
-  QuestionId: {
+  UserId: {
     type: String,
     required: true,
   },
@@ -20,10 +16,14 @@ const QuestionAttemptModelSchema = new Schema({
     required: true,
     default: Date.now,
   },
-  IsCorrect: {
-    type: Boolean,
+  Categories: {
+    type: [String],
     required: true,
   },
+  Difficulty: {
+    type: String,
+    required: true,
+  }
 });
 
 export default mongoose.model(

@@ -58,34 +58,11 @@ example body :
 example body : 
 ```
 {
-  "Username": "testuser",
-  "QuestionId": "testID",
-  "IsCorrect": "false",
-  "QuestionTitle":"2sum"
+  UserId: "123"
+  QuestionTitle: "title"
 }
 ```
 
-## get past attempts : GET http://localhost:3013/question/attempt/:username
-example response : 
-```
-[   
-    {
-        "_id": "68f367f425d68540ea8db26a",
-        "Username": "testuser",
-        "QuestionId": "testID",
-        "QuestionTitle": "2sum",
-        "IsCorrect": false,
-        "AttemptedAt": "2025-10-18T10:12:04.084Z",
-        "__v": 0
-    },
-    {
-        "_id": "68f3687f25d68540ea8db26d",
-        "Username": "testuser",
-        "QuestionId": "testID",
-        "QuestionTitle": "2sum",
-        "IsCorrect": true,
-        "AttemptedAt": "2025-10-18T10:14:23.352Z",
-        "__v": 0
-    }
-]
-```
+## get past attempts : GET http://localhost:3013/question/attempt/:userid
+
+## get all attempts by all users : GET http://localhost:3013/question/attempt/all

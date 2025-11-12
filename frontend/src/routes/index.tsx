@@ -1,5 +1,17 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5)
+Scope: 
+- Generated initial boiler plate UI
+Author review: 
+- Verfied for correctness by reading code
+- Tested using local 
+*/
+
+
 import { type FC } from 'react';
 import { Routes, Route } from 'react-router-dom';
+
 
 import HomePage from '@/pages/Home';
 import ProfilePage from '@/pages/Profile';
@@ -16,7 +28,6 @@ const AppRouter: FC = () => {
       {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      {/* <Route path="/features" element={<Features />} /> */}
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
@@ -24,6 +35,7 @@ const AppRouter: FC = () => {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/match" element={<MatchingPage />} />
         <Route path="/collab" element={<CollaborationPage/>} />
+        <Route path="/chat" />
       </Route>
       
       {/* 404 Handler */}

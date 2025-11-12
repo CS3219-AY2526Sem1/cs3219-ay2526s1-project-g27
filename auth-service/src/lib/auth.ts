@@ -1,3 +1,13 @@
+# /*
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# -  Make small amendments such as email verification functions 
+# Author review: 
+# - Verify through running 
+# - Read the code 
+# */
+
 import { betterAuth } from "better-auth";
 import { jwt, openAPI } from "better-auth/plugins"
 import { MongoClient } from "mongodb";
@@ -14,28 +24,45 @@ const client = new MongoClient(process.env.DB_LOCAL_URI as string);
 const db = client.db(process.env.DB_NAME as string);
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+
 export type User = {
   id: string;
-  email: string;
   name: string;
+  email: string;
   emailVerified: boolean;
-  image: string;
   createdAt: Date; 
   updatedAt: Date;
-  handle: string;
   currentRating: number;
 };
 
 
-
 export const auth = betterAuth({
   trustedOrigins: [process.env.FRONTEND_URL as string, process.env.BASE_URL as string, 'http://localhost:5173'],
-  baseURL: process.env.AUTH_SERVICE_BASE_URL || "http://auth-service:8000", 
+  baseURL:  process.env.FRONTEND_URL as string, 
 
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    autoSignIn: false, 
+    autoSignIn: false,
+    sendResetPassword: async ({user, url, token}, request) => {
+      const frontendUrl = new URL(url);
+      frontendUrl.host = new URL(process.env.FRONTEND_URL as string).host;
+      const emailHtml = await render(
+        VerificationEmail({ userName: user.name,verificationUrl: frontendUrl.toString()})
+      );
+
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM as string,
+        to: user.email,
+        subject: 'Verify your email',
+        html: emailHtml 
+      });
+    },
+    onPasswordReset: async ({ user }, request) => {
+      // your logic here
+      console.log(`Password for user ${user.email} has been reset.`);
+    },
+
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
@@ -56,10 +83,15 @@ export const auth = betterAuth({
       user: { email: string; name: string };
       url: string;
     }) => {
+      
+
       const frontendUrl = new URL(url);
-      frontendUrl.host = new URL(process.env.FRONTEND_URL as string).host;
+      frontendUrl.protocol = "http:";
+      frontendUrl.hostname = "localhost";
+      frontendUrl.port = "80"; // your frontend dev port
+      const verificationLink = frontendUrl.toString();
       const emailHtml = await render(
-        VerificationEmail({ userName: user.name,verificationUrl: frontendUrl.toString()})
+        VerificationEmail({ userName: user.name,verificationUrl: verificationLink})
       );
 
       await resend.emails.send({
@@ -74,7 +106,6 @@ export const auth = betterAuth({
         const profileCollection = db.collection("profiles");
         await profileCollection.insertOne({
           userId: user.id,
-          handle: (user as any).handle || null,
           currentRating: 1000,
           problemsSolved: [],
           createdAt: new Date(),
@@ -92,11 +123,6 @@ export const auth = betterAuth({
 
   user: {
     additionalFields: {
-      handle: {
-        type: "string",
-        required: false,
-        input: true 
-      },
       currentRating: {
         type: "number",
         required: true,
@@ -114,11 +140,12 @@ export const auth = betterAuth({
             const profileCollection = db.collection("profiles");
             await profileCollection.insertOne({
               userId: user.id,
-              handle: (user as any).handle || null,
               currentRating: 1000,
               problemsSolved: [],
               createdAt: new Date(),
-              updatedAt: new Date()
+              updatedAt: new Date(),
+              biography: "",
+              handles: [],
             });
 
             console.log("Profile created for user:", user.id);

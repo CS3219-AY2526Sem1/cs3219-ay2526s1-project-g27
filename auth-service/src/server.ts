@@ -1,10 +1,19 @@
+/*
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# - Boiler plate code, types 
+# Author review: 
+# - Verify through running 
+# - Read the code 
+*/
 import express from "express";
 import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 import {closeDatabase, connectToDatabase } from "./lib/db";
 import { auth } from "./lib/auth";
 import userRouter from "./routes/route";
-import authRouter from "./routes/authroute";
+import authRouter from "./routes/authRoute";
 
 const app = express();
 const PORT: number = process.env.AUTH_PORT ? parseInt(process.env.AUTH_PORT, 10) : 8000;
@@ -73,13 +82,13 @@ async function startServer() {
 }
 
 process.on("SIGINT", async () => {
-  console.log("\n🛑 Shutting down gracefully...");
+  console.log("\nShutting down gracefully...");
   await closeDatabase();
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
-  console.log("\n🛑 Shutting down gracefully...");
+  console.log("\nShutting down gracefully...");
   await closeDatabase();
   process.exit(0);
 });

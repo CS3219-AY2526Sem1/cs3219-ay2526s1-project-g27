@@ -1,7 +1,8 @@
 import QuestionAttemptModel from "../model/question-attempt-model.js";
 
-export async function findAttemptsByUser(username) {
-  return await QuestionAttemptModel.find({ Username: username });
+export async function findAttemptsByUser(UserId) {
+  console.log("Finding attempts for UserId:", UserId);
+  return await QuestionAttemptModel.find({ UserId: UserId });
 }
 
 export async function addAttempt(attemptData) {

@@ -1,3 +1,12 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT 5 date: 2025-9-29 15:30
+Tool: Gemini 2.5 Flash date: 2025-10-12 18:00
+Scope: 
+- Recommended flow of logic when users accept match
+Author review: 
+- Followed recommended logic flow and functions provided for their respective responsibility
+*/
 
 const { redisDB } = require('../config/redis');
 const { handleDisconnect } = require('../sse/disconnectHandler');
@@ -163,7 +172,22 @@ const finalizeMatch = async(matchId, data, matchingQueue, topic, difficulty) => 
     axios.post(MATCH_START_ENDPOINT).catch((error) => {
         console.log(error);
     });;
-    console.log(`Posted match start request to ${MATCH_START_ENDPOINT}`)
+    console.log(`Posted match start request to ${MATCH_START_ENDPOINT}`)    
+    
+    // record question attempt for both users
+    try {
+     const response = await axios.post("http://question-service:3013/question/attempt", {
+            UserId1: data.userA,
+            UserId2: data.userB,
+            question: question
+        });
+
+       console.log('Question attempt recorded', response);
+    } catch (error) {
+        console.error("Error recording question attempt:", error);
+        throw error;
+    }
+
     const isMatchDeleted = await redisDB.exists(matchId) < 1 ? true : false;
     console.log('is delete successful', isMatchDeleted);
 }

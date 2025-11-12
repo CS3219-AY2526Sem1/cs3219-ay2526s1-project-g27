@@ -1,5 +1,12 @@
+# /*
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# - Generated Docker  compose file for all our services
+# Author review: 
+# - Verify through running, and reading it.
+# */
 services:
-  # Nginx Gateway - Serves frontend and proxies API requests
   nginx-gateway:
     build:
       context: .
@@ -9,7 +16,6 @@ services:
       - "80:80" 
     volumes:
       - ./logs/nginx:/var/log/nginx
-      # Mount nginx config for easier development changes
       - ./nginx-gateway/config/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - leetcode_collab_net
@@ -22,7 +28,7 @@ services:
   auth-service:
     build:
       context: ./auth-service
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: auth-service-dev
     ports:
       - "8000:8000"
@@ -110,6 +116,19 @@ services:
     depends_on:
       - mongo
       - redis
+
+  # Chat Service
+  chat-service:
+    build:
+      context: ./chat
+    container_name: chat-service-dev
+    ports:
+      - "8082:8082"
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - leetcode_collab_net
 
   # Redis
   redis:

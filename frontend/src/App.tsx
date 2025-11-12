@@ -1,3 +1,14 @@
+/*
+AI Assistance Disclosure:
+Tool: Claude 4.5 
+Scope: 
+- Generated initial boiler plate UI
+- Debugging 
+Author review: 
+- Verfied for correctness by reading code
+- Tested using local 
+*/
+
 import { type FC } from 'react';
 import AppRouter from '@/routes';
 import { BrowserRouter } from 'react-router-dom'; 

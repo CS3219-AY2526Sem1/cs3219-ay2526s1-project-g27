@@ -37,15 +37,14 @@ const HomePage: FC = () => {
                 <span className="text-gray-600">{user!.username}</span>
               </div>
             )}
-
-            <div className="flex justify-between border-b pb-2">
+            {/* <div className="flex justify-between border-b pb-2">
               <span className="font-semibold text-gray-700">Authenticated:</span>
               <span className="text-green-600 font-medium">Yes ✅</span>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="font-semibold text-gray-700">Json Web Token:</span>
               <span className="text-green-600 font-medium">{jwt?.substring(0, 10)}</span>
-            </div>
+            </div> */}
           </div>
         </CardContent>
 

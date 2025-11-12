@@ -1,6 +1,4 @@
-import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,15 +28,7 @@ const formSchema = z.object({
 })
 
 export default function LoginForm() {
-  const { login, isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/", { replace: true }); 
-    }
-  }, [isAuthenticated, navigate]);
-
+  const { login, isLoading } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,10 +39,14 @@ export default function LoginForm() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      await login(values); // login({ email, password })
-    } catch (error) {
-      alert(`Login has failed + ${error}`)
+    const result = await login(values);
+    if (result.error) {
+      const errorMessage = result.error.message === "Invalid email or password"
+        ? result.error.message
+        : "An unknown error occured.";
+      form.setError("root", {
+        message: errorMessage,
+      });
     }
   }
   
@@ -76,7 +70,7 @@ export default function LoginForm() {
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-600"/>
               </FormItem>
             )}
           />
@@ -103,10 +97,17 @@ export default function LoginForm() {
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-600"/>
               </FormItem>
             )}
           />
+
+          {form.formState.errors.root && (
+            <FormItem>
+              {/* You can reuse your FormMessage component for consistent styling */}
+              <FormMessage className="text-red-600">{form.formState.errors.root.message}</FormMessage>
+            </FormItem>
+          )}
 
           <Field>
             <Button type="submit" disabled={isLoading} className="bg-navbar w-full">

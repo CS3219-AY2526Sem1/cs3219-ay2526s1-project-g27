@@ -1,3 +1,12 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: Gemini 2.5 Pro) date: 2025‑11-08
+Scope: 
+- Generated simple loading spinner for UI
+Author review: 
+- Verfied for correctness by testing
+*/
+
 import { AlertCircle } from 'lucide-react';
 import {
   Select,
@@ -16,23 +25,35 @@ import {
 import { Button } from '@/components/ui/button';
 import { useMatching } from '@/context/MatchContext';
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import apiClient from "@/api/apiClient";   
 import { useAuth } from '@/context/AuthContext';
 
-// interface MatchedUserType {
-//   name: string;
-//   level: string;
-//   topic: string;
-// }
-// TODO: remove user from matching api + consider how the state can be kept whenever user is in the queue when navigate between pages
+
 export default function MatchingPage() {
-  const difficulties = ['Easy', 'Medium', 'Hard'];
-  const topics = ['Arrays', 'Strings', 'Dynamic Programming', 'Graphs', 'Trees', 'Sorting', 'Data Structures',
-            'Algorithms'];
+  // based on currently seeded values from question service
+  const difficulties = ['easy', 'medium', 'hard'];
+  const topics = [
+    "Algorithms",
+    "Arrays",
+    "Bit Manipulation",
+    "Brainteaser",
+    "Data Structures",
+    "Databases",
+    "Recursion",
+    "Strings"
+  ];
 
   //@ts-ignore
   const { isMatching, timer, showError, errorMessage, showAcceptMatch, matchFound, topic, difficulty, setTopic, setDifficulty, startMatching, stopMatching, acceptMatch } = useMatching();
+
+  {/* Logic for changing dialog on accept */}
+  const [isWaitingForPartner, setIsWaitingForPartner] = useState(false);
+  useEffect(() => {
+    if (!showAcceptMatch) {
+      setIsWaitingForPartner(false);
+    }
+  }, [showAcceptMatch]);
 
   const navigate = useNavigate();
   const { jwt } = useAuth();
@@ -75,9 +96,9 @@ export default function MatchingPage() {
             <SelectTrigger className="w-full h-16 text-lg bg-white border-2 border-gray-300 rounded-lg">
               <SelectValue placeholder="Difficulty Level" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               {difficulties.map((level) => (
-                <SelectItem key={level} value={level} className="text-lg bg-white bg-opacity-100">
+                <SelectItem key={level} value={level} className="text-lg">
                   {level}
                 </SelectItem>
               ))}
@@ -89,9 +110,9 @@ export default function MatchingPage() {
             <SelectTrigger className="w-full h-16 text-lg bg-white border-2 border-gray-300 rounded-lg">
               <SelectValue placeholder="Topic" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               {topics.map((t) => (
-                <SelectItem key={t} value={t} className="text-lg bg-white bg-opacity-100">
+                <SelectItem key={t} value={t} className="text-lg">
                   {t}
                 </SelectItem>
               ))}
@@ -121,53 +142,88 @@ export default function MatchingPage() {
 
       {/* Match Success Dialog */}
       <Dialog open={matchFound}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent showCloseButton={false} className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Match Success 🎉</DialogTitle>
+            <DialogTitle className="text-2xl">Match Success!</DialogTitle>
             <DialogDescription className="text-base">
               Redirecting to collaboration space...
             </DialogDescription>
           </DialogHeader>
-          {/* {matchedUser && ( */}
-          {(
-            <div className="space-y-4 py-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="font-semibold text-gray-600">Name:</span>
-                  {/* <span className="text-lg">{matchedUser.name}</span> */}
-                </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="font-semibold text-gray-600">Difficulty:</span>
-                  {/* <span className="text-lg">{matchedUser.level}</span> */}
-                </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span className="font-semibold text-gray-600">Topic:</span>
-                  {/* <span className="text-lg">{matchedUser.topic}</span> */}
-                </div>
-              </div>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
 
       {/* Match Accept Dialog */}
-      {/* TODO: Need to remove closing dialog option*/}
       <Dialog open={showAcceptMatch}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Match Found! 🎉</DialogTitle>
-            <DialogDescription className="text-base">
-              You've been matched with a peer
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex gap-3 pt-4">
-              {/* TODO: Need to disable button after pressing accept*/}
-              <Button onClick={acceptMatch} className="flex-1">
-                Accept
-              </Button>
-            </div>
-          </div>
+        <DialogContent
+          showCloseButton={false}
+          className="sm:max-w-md"
+          // This prevents closing the dialog by clicking the overlay
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+        >
+          {!isWaitingForPartner ? (
+            // STATE 1: Show Accept/Decline options
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl">Match Found!</DialogTitle>
+                <DialogDescription className="text-base">
+                  You've been matched with a peer.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={stopMatching} 
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Decline
+                </Button>
+                <Button
+                  onClick={() => {
+                    acceptMatch();
+                    setIsWaitingForPartner(true);
+                  }}
+                  className="flex-1"
+                >
+                  Accept
+                </Button>
+              </div>
+            </>
+          ) : (
+            // STATE 2: Show "Waiting for partner..."
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl">Match Accepted!</DialogTitle>
+                <DialogDescription className="text-base">
+                  Waiting for your partner to accept...
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-center items-center h-24">
+                {/* Simple loading spinner (AI-generated) */}
+                <svg
+                  className="animate-spin h-8 w-8 text-black"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

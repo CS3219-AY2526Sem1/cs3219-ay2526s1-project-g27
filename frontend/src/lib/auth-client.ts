@@ -3,7 +3,7 @@ import { jwtClient } from "better-auth/client/plugins";
 
 const authURL =
   import.meta.env.VITE_BETTER_AUTH_URL ??
-  `http://localhost:8000`;
+  `http://localhost:80`;
 
 // Create ONE auth client with the JWT plugin
 export const authClient = createAuthClient({
