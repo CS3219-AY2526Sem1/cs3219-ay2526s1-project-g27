@@ -118,18 +118,6 @@ export const auth = betterAuth({
     
   },
 
-
-  user: {
-    additionalFields: {
-      currentRating: {
-        type: "number",
-        required: true,
-        defaultValue: 1000, 
-        input: false
-      },
-    }
-  },
-
   databaseHooks: {
     user: {
       create: {
