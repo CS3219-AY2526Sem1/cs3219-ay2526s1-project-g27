@@ -106,22 +106,16 @@ export default function FloatingChat({ matchToken }: CollaborativeChatProps) {
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        width: isOpen ? 300 : 60,
-        height: isOpen ? 400 : 60,
-        borderRadius: '10px',
-        boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
-        backgroundColor: '#fff',
-        overflow: 'hidden',
-        transition: 'all 0.3s ease',
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 9999,
-      }}
+    <div className={`fixed bottom-5 right-5 
+                  flex flex-col
+                  bg-white 
+                  rounded-[10px]
+                  shadow-[0_4px_10px_rgba(0,0,0,0.2)]
+                  overflow-hidden
+                  transition-all duration-300 ease-in-out
+                  z-[9999]
+                  ${isOpen ? 'w-[300px] h-100' : 'w-15 h-15'}
+                `}
     >
       {/* Header / Toggle */}
       <div

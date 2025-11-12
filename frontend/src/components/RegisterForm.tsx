@@ -1,9 +1,19 @@
+/*
+AI Assistance Disclosure:
+Tool: Gemini 2.5 Pro date: 2025‑10‑07
+Scope: 
+- Introduced Zod validation schema integration
+Author review: 
+- Rewrote code around the custom requirements of users' particulars
+(e.g. minimum/maximum password length, valid email regex format)
+- Verified by testing code
+*/
+
 import { useState } from "react"; 
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/context/AuthContext"; 
-import { toast } from "sonner"; 
 
 import { Field, FieldDescription, FieldGroup } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
@@ -63,20 +73,19 @@ export default function RegisterForm() {
     setIsLoading(true);
     try {
       const { email, password, username } = values;
-
+      form.clearErrors("root"); // Clear previous root errors
       const { error } = await signup({ email, password, name: username });
 
       if (error) {
-        toast.error(`Sign-up failed: ${error.message}`);
+        form.setError("root", { message: `Sign-up failed: ${error.message}` });
       } else {
-        toast.success(
-          "Sign-up successful! Please check your email (outside of Outlook) to verify your account."
-        );
         setIsSuccess(true);
-      } 
+      }
     } catch (err) {
       console.error("An unexpected error occurred:", err);
-      toast.error("An unexpected error occurred. Please try again.");
+      form.setError("root", {
+        message: "An unexpected error occurred. Please try again.",
+      });
     } finally {
       setIsLoading(false); // Re-enable the form
     }
@@ -169,8 +178,14 @@ export default function RegisterForm() {
             )}
           />
 
+          {form.formState.errors.root && (
+            <FormItem>
+              <FormMessage className="text-red-600">{form.formState.errors.root.message}</FormMessage>
+            </FormItem>
+          )}
+
           <Field>
-            <Button type="submit" className="w-full" disabled={isLoading || isSuccess}>
+            <Button type="submit" className="bg-navbar w-full" disabled={isLoading || isSuccess}>
               {
                 isLoading
                 ? "Signing Up..."
@@ -179,7 +194,6 @@ export default function RegisterForm() {
                 : "Sign Up"
               }
             </Button>
-
             <FieldDescription className="text-center">
               Already have an account? <a href="/login">Log in</a>
             </FieldDescription>

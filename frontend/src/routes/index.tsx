@@ -17,6 +17,8 @@ import HomePage from '@/pages/Home';
 import ProfilePage from '@/pages/Profile';
 import LoginPage from '@/pages/auth/Login';
 import RegisterPage from '@/pages/auth/Register';
+import ForgotPasswordPage from '@/pages/auth/ForgotPassword';
+import ResetPasswordPage from '@/pages/auth/ResetPassword';
 import NotFound from '@/pages/NotFound';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 import MatchingPage from '@/pages/matching/Match';
@@ -28,7 +30,9 @@ const AppRouter: FC = () => {
       {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomePage />} />
