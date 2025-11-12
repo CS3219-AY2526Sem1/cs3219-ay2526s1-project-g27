@@ -5,13 +5,13 @@
 Scope: 
 - Expand 'connection' to include telemetry
 Author review: 
-- Verfied for correctness by running code
+- Verified for correctness by running code
 */
 
 // Env variables required:
 // - HOST
 // - PORT
-// app.get('/user/status/:userId', (req, res) => { //req.param.userId //get from redis }) app.post('/match/start/:jwt', (req, res) => { //req.param.jwt //send to redis }) app.get('/match/status/:jwt', (req, res) => { //req.param.jwt //get from redis }) in redis, the key value stored is {match_id: [user_ids]}. Help to fill in the functions. use ioredis
+
 
 import WebSocket from 'ws'
 import http from 'http'
@@ -144,8 +144,8 @@ app.get('/user/status/:userId', async (req, res) => {
   }
 })
 
-app.post('/match/start/:jwt', async (req, res) => {
-  const matchToken = req.params.jwt;
+app.post('/match/start/:matchToken', async (req, res) => {
+  const matchToken = req.params.matchToken;
   console.log(`Received Match Start Request for MatchId:${matchToken}`)
   try {
     // Verify JWT token
@@ -153,10 +153,10 @@ app.post('/match/start/:jwt', async (req, res) => {
       if (err) {
         console.log('Auth failed during match start:', err.message);
         // Reject connection
-        return res.status(400).json({ error: 'Invalid matchToken' });
+        return res.status(400).json({ error: 'Invalid match token' });
       }
       await redis.set(`match:${matchToken}`, JSON.stringify(decoded));
-      return res.json({ success: true, matchId: matchToken });
+      return res.json({ success: true, matchToken: matchToken });
     })
   } catch (err) {
     console.error(err);
@@ -164,15 +164,15 @@ app.post('/match/start/:jwt', async (req, res) => {
   }
 })
 
-app.get('/match/status/:jwt', async (req, res) => {
-  const token = req.params.jwt;
-  console.log(`Status request received for match:${jwt}`)
-  const status = await getMatchStatus(token);
+app.get('/match/status/:matchToken', async (req, res) => {
+  const matchToken = req.params.matchToken;
+  console.log(`Status request received for match:${matchToken}`)
+  const status = await getMatchStatus(matchToken);
   try{
     if (status) {
-      return res.json({ status: 'in_match', token });
+      return res.json({ status: 'in_match', matchToken: matchToken });
     } else { 
-      return res.json({ status: 'no_match', token });
+      return res.json({ status: 'no_match', matchToken: matchToken });
     }
   } catch (err) {
     console.error(err);
@@ -180,14 +180,14 @@ app.get('/match/status/:jwt', async (req, res) => {
   }
 })
 
-app.post('/match/stop/:jwt', async (req, res) => {
-  const matchToken = req.params.jwt;
+app.post('/match/stop/:matchToken', async (req, res) => {
+  const matchToken = req.params.matchToken;
   try {
     await stopMatch(matchToken);
-    return res.json({ success: true, matchId: matchToken });
+    return res.json({ success: true, matchToken: matchToken });
   } catch (error) {
     if (error instanceof URIError) {
-      return res.status(400).json({ error: 'Invalid matchToken' });
+      return res.status(400).json({ error: 'Invalid match token' });
     }
     console.error(error);
     return res.status(500).json({ error: 'Server error' });
