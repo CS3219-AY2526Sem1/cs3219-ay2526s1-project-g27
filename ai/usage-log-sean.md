@@ -214,11 +214,7 @@ Ask Gemini to generate code for such a gateway using express and docker using ng
 - [X] Rejected
 
 # Author Notes:
-<<<<<<< HEAD
-Tailor the nginx configuration to the different services route endpoint and based on whether websocket or not, tailor the headers.
-=======
 The overall Gateway was buggy and full of errors like dealing with headers and CORS issue. Choose NGINX which is a more commonly use open source solution.
->>>>>>> dev
 
 
 # Date / Time:
@@ -237,8 +233,6 @@ Asked for Ngnix configuration instead since gateway showing alot of problems, it
 # Author Notes:
 Modifying it to tailor to our own service and settings. This include adding to SSE and adding authorization headers.
 Decided to also host react on the ngnix and serve it instead of separating out.
-<<<<<<< HEAD
-=======
 
 # Date / Time
 10-10-2025
@@ -256,7 +250,6 @@ Given the Better Auth Documentation, how can i set up JSON Web Token for verific
 
 # Author Notes:
 Make route amendments and ensure that the proxy in NGINX matches 
->>>>>>> dev
 
 
 # Date / Time
@@ -292,8 +285,6 @@ Change the API endpoints based on the DB schema change myself
 
 # Author Notes:
 Modified to use own DB and types.
-<<<<<<< HEAD
-=======
 
 
 
@@ -335,4 +326,3 @@ REMOVED from use. Decide to not pursue this NTH
 
 
 
->>>>>>> dev
