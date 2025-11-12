@@ -1,3 +1,10 @@
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5) date: 2025-9-23
+# Scope: Create Dockerfile for question-service
+# Author review: 
+# I validated correctness, and tested it manually by checking if the container starts
+
+# AI‑generated (edited by Kok Seng)
 # Use Node.js LTS
 FROM node:22
 
@@ -11,7 +18,6 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Expose port (match your server)
 EXPOSE 3000
 
 # Start the app

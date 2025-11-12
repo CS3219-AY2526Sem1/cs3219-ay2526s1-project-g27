@@ -1,3 +1,14 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5) date: 2025-9-23
+Scope: 
+- create standard CRUD server
+Author review: 
+- I validated correctness by starting project and testing endpoints
+*/
+
+// AI‑generated (edited by Kok Seng)
+
 import express from "express";
 import cors from "cors";
 

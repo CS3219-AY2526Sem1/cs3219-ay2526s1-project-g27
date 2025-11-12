@@ -1,3 +1,13 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5) date: 2025-9-23
+Scope: 
+- create standard startup server with mongodb
+Author review: 
+- I validated correctness by starting project
+*/
+
+// AI‑generated (edited by Kok Seng)
 import http from "http";
 import index from "./index.js";
 import { connectToDB } from "./repository/question-repository.js";

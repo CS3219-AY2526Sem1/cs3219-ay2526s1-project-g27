@@ -14,8 +14,9 @@ export async function seedTestQuestions() {
   const count = await questionModel.countDocuments();
   if (count > 0) return;
 
-  console.log("DB is empty. Seeding test questions...");
+  console.log("DB is empty. Seeding test questions");
 
+  // AI‑generated (edited by Kok Seng)
   const questions = [
     {
       questionId: 1,
