@@ -14,7 +14,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/context/AuthContext"; 
-import { toast } from "sonner"; 
 
 import { Field, FieldDescription, FieldGroup } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
@@ -179,6 +178,12 @@ export default function RegisterForm() {
             )}
           />
 
+          {form.formState.errors.root && (
+            <FormItem>
+              <FormMessage className="text-red-600">{form.formState.errors.root.message}</FormMessage>
+            </FormItem>
+          )}
+
           <Field>
             <Button type="submit" className="bg-navbar w-full" disabled={isLoading || isSuccess}>
               {
@@ -189,7 +194,6 @@ export default function RegisterForm() {
                 : "Sign Up"
               }
             </Button>
-
             <FieldDescription className="text-center">
               Already have an account? <a href="/login">Log in</a>
             </FieldDescription>

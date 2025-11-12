@@ -73,13 +73,32 @@ Generated code for the initial UI for the dashboard, in dark mode with purple co
 ## Tool:
 Claude Haiku 4.5 (on Copilot)
 ## Prompt/Command:
-Write documentation for the README file in sections about API docs, run books and design choices.
+Write documentation for the README file in sections about API docs and design choices.
 ## Output Summary:
-Generated 
+Generated the requested documentation for the README file. 
 ## Action Taken:
 - [ ] Accepted as-is
 - [X] Modified
 - [ ] Rejected
 ## Author Notes:
 - Truncated irrelevant details
+- Verified by reading the documentation from top to bottom
+
+
+## Date/Time:
+2025-11-12 06:30
+## Tool:
+Claude Haiku 4.5 (on Copilot)
+## Prompt/Command:
+Write documentation for the project overall README file in sections about API docs, design choices and runbook.
+## Output Summary:
+Generated the requested documentation for the README file. 
+## Action Taken:
+- [ ] Accepted as-is
+- [X] Modified
+- [ ] Rejected
+## Author Notes:
+- Modified the starting text of the generated README to be more user friendly
+- Truncated irrelevant details
+- Modified inaccurate information
 - Verified by reading the documentation from top to bottom
