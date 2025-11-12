@@ -265,10 +265,10 @@ JWT_SECRET=[secret]
 
 **Key Endpoints**:
 - `POST /queue` - Join matching queue
-- `GET /queue-events/{userId}` - SSE stream for match notifications
-- `DELETE /queue/{userId}` - Leave queue
-- `POST /matches` - Accept match
-- `GET /matches/{matchId}` - Get match status
+- `DELETE /queue/:userId` - Leave queue
+- `PUT /matches` - Accept match
+- `GET /queue-events/:userId` - SSE stream for match notifications
+- `HEAD /queue-events/:userId` - Check existence of user-specific event stream
 
 **Dockerfile Strategy**: Production-optimized with non-root user
 ```dockerfile
@@ -294,7 +294,6 @@ CMD ["npm", "run", "dev"]
 
 **Key Technology**: BullMQ for job queueing
 - Uses Redis as backend
-- Manages matching queue with automatic TTL
 - Supports job retries and failure handling
 
 **Related Files**:
@@ -624,11 +623,11 @@ CMD ["nginx", "-g", "daemon off;"]
 
 ### 5. Job Queue for Matching (BullMQ + Redis)
 
-**Why Async Queues for Matching?**
+**Why BullMQ for Matching?**
 
-- **Fault Tolerance**: Matching jobs survive service restarts (persisted in Redis)
-- **Scalability**: Multiple matching service instances can consume queue jobs
-- **Delayed Execution**: Queue supports TTL (time-to-live) for auto-abandon
+- **Low latency**: In-memory queue operations with high throughput
+- **Non-persistence**: Keeping the system lightweight for real-time matching
+- **Scalability**: Multiple workers can asynchronously consume queue jobs
 - **Job Retries**: Failed matches automatically retry
 
 **Architecture**:
@@ -712,6 +711,24 @@ ports:
 - Better network isolation
 
 ---
+
+### 9. Testing
+Test files are implemented for both the **Frontend** and the **Matching Service**, focusing primarily on **unit testing**.
+
+**Testing Libraries**
+- Jest
+- Vitest
+
+**Why Unit Testing on Selected Services?**
+- **Frontend**  
+  The frontend involves many fine-grained interactions, such as verifying whether error messages are displayed correctly, e.g., when wrong password is keyed in during login or whether navigation occurs as expected. Automating these checks through unit tests saves time compared to manual testing.
+
+- **Matching Service**  
+  The matching logic is defined using a function that executes the matching criteria. Unit tests ensure this behave correctly and consistently under different scenarios.
+
+**Why These Libraries?**
+- **Vitest** — chosen for the frontend since it integrates seamlessly with **Vite** and **React**, offering fast and compatible testing.  
+- **Jest** — used for backend JavaScript code due to its ease of setup, built-in parallel execution, and mature ecosystem, allowing efficient and reliable testing.
 
 ## Runbooks
 
