@@ -7,12 +7,11 @@ A React-based frontend for PeerPrep, a real-time peer programming interview prep
 ## Table of Contents
 
 - [Architecture](#architecture)
-- [API Endpoints](#api-endpoints)
+- [API Calls](#api-calls)
 - [Real-Time Protocols](#real-time-protocols)
 - [Design Choices](#design-choices)
 - [Error Handling & Edge Cases](#error-handling--edge-cases)
 - [Setup and Running](#setup-and-running)
-- [Testing](#testing)
 
 ---
 
@@ -30,7 +29,7 @@ The PeerPrep frontend is a React (Vite) single-page application (SPA). It consis
 
 ---
 
-## API Endpoints
+## API Calls
 
 The frontend communicates with backend services via a proxy at `/api`.
 
