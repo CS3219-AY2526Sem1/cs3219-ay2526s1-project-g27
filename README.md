@@ -22,6 +22,9 @@ A comprehensive overview of PeerPrep, a real-time peer programming interview pre
 ### Running with Docker Compose
 
 ```bash
+# Start all services in development mode (first build)
+docker-compose up --build
+
 # Start all services in development mode
 docker-compose up
 
@@ -76,7 +79,7 @@ PeerPrep is built as a collection of containerized microservices communicating t
 **Volumes**:
 - `mongo-data`: Persistent MongoDB data
 - `./logs/nginx`: Nginx access/error logs (bind mount)
-- `./auth-service`, `./frontend`, etc.: Development source code (bind mount for hot reload)
+- `./auth-service`, `./frontend`, etc.: Development source code
 
 **Service Interdependencies**:
 - Nginx depends on: Auth Service, Question Service
@@ -175,7 +178,7 @@ CMD ["npm", "run", "dev"]  # Uses nodemon + ts-node
 ```
 
 **Volume Mounts**:
-- `/app` (bind mount to `./auth-service`) - hot reload on source changes
+- `/app` (bind mount to `./auth-service`)
 - `/app/node_modules` (anonymous volume) - isolated node_modules
 
 **Dependencies**:
@@ -227,7 +230,7 @@ CMD ["npm", "start"]
 ```
 
 **Volume Mounts**:
-- `/app` (bind mount to `./question-service`) - hot reload
+- `/app` (bind mount to `./question-service`)
 - `/app/node_modules` (anonymous volume)
 
 **Dependencies**:
@@ -286,7 +289,7 @@ CMD ["npm", "run", "dev"]
 - Separated application directory from root
 
 **Volume Mounts**:
-- `/app` (bind mount to `./matching-service`) - hot reload
+- `/app` (bind mount to `./matching-service`)
 - `/app/node_modules` (anonymous volume)
 
 **Key Technology**: BullMQ for job queueing
@@ -340,7 +343,7 @@ CMD ["npm", "start"]
 ```
 
 **Volume Mounts**:
-- `/app` (bind mount to `./collab/server`) - hot reload
+- `/app` (bind mount to `./collab/server`)
 - `/app/node_modules` (anonymous volume)
 
 **WebSocket Connection**:
@@ -390,7 +393,7 @@ CMD ["node", "server.js"]
 ```
 
 **Volume Mounts**:
-- `/app` (bind mount to `./chat`) - hot reload
+- `/app` (bind mount to `./chat`)
 - `/app/node_modules` (anonymous volume)
 
 **WebSocket Connection**:
@@ -415,13 +418,13 @@ CMD ["node", "server.js"]
 
 **Environment Variables**:
 ```bash
-CHOKIDAR_USEPOLLING=true  # Required for Docker hot reload
+CHOKIDAR_USEPOLLING=true 
 VITE_API_BASE_URL=/api
 ```
 
 **Base Technology**: Vite + React 19
 
-**Dockerfile Strategy**: Development with hot reload
+**Dockerfile Strategy**: Development
 ```dockerfile
 FROM node:22-alpine
 WORKDIR /app
@@ -433,7 +436,7 @@ CMD ["npm", "run", "dev"]
 ```
 
 **Volume Mounts**:
-- `/app` (bind mount to `./frontend`) - hot reload
+- `/app` (bind mount to `./frontend`) 
 - `/app/node_modules` (anonymous volume)
 
 **Build Output**: 
@@ -503,407 +506,7 @@ command: redis-server --appendonly no --save ""
 
 ## API Documentation
 
-### Base Configuration
-
-All API requests go through the nginx gateway at port 80. The gateway routes requests to internal services:
-
-```
-Request: http://localhost/api/auth/sign-in
-         ↓
-Nginx: Proxies to http://auth-service:8000
-         ↓
-Response: JWT token
-```
-
-### Request/Response Pattern
-
-**Authentication Header**:
-```bash
-Authorization: Bearer <JWT_TOKEN>
-```
-
-**API Response Format**:
-```json
-{
-  "data": { /* response payload */ },
-  "error": null
-}
-```
-
-**Error Responses**:
-- `401 Unauthorized`: Invalid or missing JWT token
-- `403 Forbidden`: Insufficient permissions
-- `400 Bad Request`: Validation error
-- `500 Internal Server Error`: Server error
-
-### Authentication API
-
-**Sign Up**
-```
-POST /api/auth/sign-up
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "securePassword123",
-  "name": "John Doe"
-}
-
-Response (201):
-{
-  "data": {
-    "user": {
-      "id": "user_123",
-      "email": "user@example.com",
-      "name": "John Doe"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIs..."
-  }
-}
-```
-
-**Sign In**
-```
-POST /api/auth/sign-in
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "securePassword123"
-}
-
-Response (200):
-{
-  "data": {
-    "user": { /* user object */ },
-    "token": "eyJhbGciOiJIUzI1NiIs..."
-  }
-}
-```
-
-**JWT Verification** (Internal, called by nginx)
-```
-POST /api/jwt/verify-jwt
-Authorization: Bearer <TOKEN>
-
-Response (200):
-{
-  "valid": true,
-  "userId": "user_123"
-}
-```
-
-**JWKS Endpoint** (For token verification)
-```
-GET /api/auth/jwks
-
-Response (200):
-{
-  "keys": [
-    {
-      "alg": "HS256",
-      "kty": "oct",
-      "kid": "key_id",
-      "k": "base64_encoded_key"
-    }
-  ]
-}
-```
-
-### User Profile API
-
-**Get Profile**
-```
-GET /api/users/{userId}/profile
-Authorization: Bearer <TOKEN>
-
-Response (200):
-{
-  "data": {
-    "userId": "user_123",
-    "username": "johndoe",
-    "email": "user@example.com",
-    "biography": "Software engineer interested in DSA",
-    "handles": {
-      "leetcode": "johndoe_lc",
-      "github": "johndoe"
-    },
-    "problemsSolved": 150,
-    "joinDate": "2024-01-15T10:30:00Z"
-  }
-}
-```
-
-**Update Profile**
-```
-PUT /api/users/{userId}/profile
-Authorization: Bearer <TOKEN>
-Content-Type: application/json
-
-{
-  "username": "johndoe_updated",
-  "biography": "Updated bio",
-  "handles": {
-    "leetcode": "johndoe_lc_v2",
-    "codeforces": "johndoe_cf"
-  }
-}
-
-Response (200):
-{
-  "data": { /* updated profile */ }
-}
-```
-
-### Questions API
-
-**Get Random Question**
-```
-POST /api/questions/question/random
-Authorization: Bearer <TOKEN>
-Content-Type: application/json
-
-{
-  "categories": ["arrays", "strings"],
-  "difficulty": "medium"
-}
-
-Response (200):
-{
-  "data": {
-    "id": "q_abc123",
-    "title": "Two Sum",
-    "description": "Given an array of integers...",
-    "complexity": "O(n)",
-    "categories": ["arrays", "hash-table"],
-    "difficulty": "easy",
-    "examples": [
-      {
-        "input": "[2,7,11,15], target = 9",
-        "output": "[0,1]"
-      }
-    ]
-  }
-}
-```
-
-**Get Question by ID**
-```
-GET /api/questions/question/{questionId}
-Authorization: Bearer <TOKEN>
-
-Response (200):
-{
-  "data": { /* full question object */ }
-}
-```
-
-**Get User's Question Attempts**
-```
-GET /api/questions/question/attempt/{userId}
-Authorization: Bearer <TOKEN>
-
-Response (200):
-{
-  "data": [
-    {
-      "id": "attempt_123",
-      "userId": "user_123",
-      "questionId": "q_abc123",
-      "submittedCode": "...",
-      "result": "accepted",
-      "submittedAt": "2024-11-12T15:30:00Z"
-    }
-  ]
-}
-```
-
-**Submit Question Attempt**
-```
-POST /api/questions/question/attempt
-Authorization: Bearer <TOKEN>
-Content-Type: application/json
-
-{
-  "userId": "user_123",
-  "questionId": "q_abc123",
-  "code": "...",
-  "language": "javascript"
-}
-
-Response (201):
-{
-  "data": {
-    "id": "attempt_123",
-    "result": "accepted"
-  }
-}
-```
-
-### Matching API
-
-**Start Queue**
-```
-POST /api/matching/queue
-Authorization: Bearer <TOKEN>
-Content-Type: application/json
-
-{
-  "userId": "user_123",
-  "topic": "arrays",
-  "difficulty": "medium"
-}
-
-Response (200):
-{
-  "data": {
-    "queueId": "queue_456",
-    "status": "queued",
-    "createdAt": "2024-11-12T15:30:00Z"
-  }
-}
-```
-
-**Queue Events (Server-Sent Events)**
-```
-GET /api/matching/queue-events/{userId}?token={JWT_TOKEN}
-
-Response: Event stream
-event: match_found
-data: {
-  "matchId": "match_789",
-  "opponentId": "user_456",
-  "questionId": "q_abc123",
-  "matchToken": "token_xyz"
-}
-```
-
-**Accept Match**
-```
-POST /api/matching/matches
-Authorization: Bearer <TOKEN>
-Content-Type: application/json
-
-{
-  "userId": "user_123",
-  "matchId": "match_789"
-}
-
-Response (200):
-{
-  "data": {
-    "status": "accepted",
-    "sessionToken": "token_xyz"
-  }
-}
-```
-
-**Leave Queue**
-```
-DELETE /api/matching/queue/{userId}
-Authorization: Bearer <TOKEN>
-
-Response (204): No content
-```
-
-**Check Match Status**
-```
-GET /api/matching/matches/{matchToken}/status?token={JWT_TOKEN}
-
-Response (200):
-{
-  "data": {
-    "status": "in_match",
-    "participants": ["user_123", "user_456"],
-    "questionId": "q_abc123"
-  }
-}
-```
-
-### Collaboration API
-
-**WebSocket Connection**
-```
-Protocol: WebSocket
-URL: ws://localhost/api/collab/room/{matchToken}
-Query Params:
-  - userId: User identifier
-  - token: JWT token
-
-Upgrade Headers:
-  Connection: upgrade
-  Upgrade: websocket
-
-Message Protocol: Yjs CRDT (binary)
-```
-
-**Message Flow**:
-1. Client connects to WebSocket
-2. Server sends initial document state
-3. Client sends local edits as Yjs deltas
-4. Server broadcasts deltas to other connected clients
-5. All clients maintain consistent document via CRDT merge
-
-**Example JavaScript**:
-```javascript
-const wsUrl = `ws://localhost/api/collab/room/${matchToken}?userId=${userId}&token=${jwtToken}`;
-const ws = new WebSocket(wsUrl);
-
-ws.onmessage = (event) => {
-  // Binary Yjs delta
-  const delta = new Uint8Array(event.data);
-  ydoc.transact(() => {
-    Y.applyUpdate(ydoc, delta);
-  });
-};
-
-ydoc.on('update', (update) => {
-  ws.send(update);
-});
-```
-
-### Chat API
-
-**WebSocket Connection**
-```
-Protocol: WebSocket
-URL: ws://localhost/api/chat
-Query Params:
-  - userId: User identifier
-  - token: JWT token
-
-Message Protocol: Yjs Y.Array with message objects
-```
-
-**Message Format**:
-```json
-{
-  "userId": "user_123",
-  "username": "johndoe",
-  "text": "What's your approach?",
-  "timestamp": "2024-11-12T15:35:00Z"
-}
-```
-
-**Example JavaScript**:
-```javascript
-const yarray = ydoc.getArray('messages');
-
-// Add message
-yarray.push([{
-  userId: 'user_123',
-  username: 'johndoe',
-  text: 'Hello!',
-  timestamp: new Date().toISOString()
-}]);
-
-// Listen for new messages
-yarray.observe((event) => {
-  event.changes.added.forEach((item) => {
-    console.log('New message:', item.content.getContent());
-  });
-});
-```
+[PENDING]
 
 ---
 
@@ -1050,7 +653,6 @@ Match found → Sends SSE notification → User accepts → Session created
 **Advantages**:
 - One command to spin up entire stack: `docker-compose up`
 - Services auto-discover each other via DNS
-- Volume mounts enable hot reload
 - Matches production architecture (services in containers)
 
 **Volume Strategy**:
@@ -1153,7 +755,7 @@ npm run dev
 # This allows faster iteration on frontend code without container rebuild
 ```
 
-#### 3. Development Workflow with Hot Reload
+#### 3. Development Workflow
 
 ```bash
 # Terminal 1: Start containers
@@ -1166,11 +768,6 @@ docker-compose up
 # auth-service-dev | [nodemon] restarting due to changes
 # Nodemon automatically restarts the service
 ```
-
-**Why hot reload works**:
-- Bind mounts source code into container (`-v ./auth-service:/app`)
-- Services run with nodemon/ts-node (watches file changes)
-- No container rebuild needed
 
 ---
 
@@ -1246,35 +843,6 @@ docker-compose build auth-service
 
 # Build with no cache (force rebuild)
 docker-compose build --no-cache nginx-gateway
-```
-
-#### Tag and Push to Registry
-
-```bash
-# Tag image for registry
-docker tag peerprep_nginx-gateway:latest myregistry.azurecr.io/peerprep/nginx-gateway:latest
-
-# Push to Azure Container Registry
-docker push myregistry.azurecr.io/peerprep/nginx-gateway:latest
-
-# Create registry secret in Kubernetes
-kubectl create secret docker-registry regcred \
-  --docker-server=myregistry.azurecr.io \
-  --docker-username=<username> \
-  --docker-password=<password>
-```
-
-#### Multi-Platform Build (ARM64 for Apple Silicon)
-
-```bash
-# Enable buildx for multi-platform builds
-docker buildx create --name mybuilder
-
-# Build for multiple platforms
-docker buildx build --platform linux/amd64,linux/arm64 \
-  -t myregistry.azurecr.io/peerprep/auth-service:latest \
-  -f ./auth-service/Dockerfile.dev \
-  ./auth-service
 ```
 
 ---
@@ -1404,226 +972,6 @@ docker-compose exec auth-service route
 docker network inspect $(docker-compose ps -q auth-service)
 ```
 
-#### MongoDB connection refused
-
-```bash
-# Ensure mongo service is up
-docker-compose ps | grep mongo
-
-# Check mongo logs
-docker-compose logs mongo
-
-# Test connection
-docker-compose exec auth-service curl http://mongo:27017
-
-# Check MongoDB status in shell
-docker-compose exec mongo mongosh --eval "db.runCommand('ping')"
-```
-
-#### Hot reload not working
-
-```bash
-# 1. Check bind mounts
-docker inspect $(docker-compose ps -q auth-service) | grep -A 5 Mounts
-
-# 2. Verify file ownership
-docker-compose exec auth-service ls -la /app
-
-# 3. Restart service
-docker-compose restart auth-service
-
-# 4. On Windows/Mac: Enable polling
-# In docker-compose.yml:
-environment:
-  - CHOKIDAR_USEPOLLING=true
-```
-
-#### WebSocket connection fails
-
-```bash
-# Check nginx configuration
-docker-compose exec nginx-gateway cat /etc/nginx/nginx.conf | grep -A 10 "Upgrade"
-
-# Test WebSocket endpoint
-docker-compose exec nginx-gateway curl -i -N \
-  -H "Connection: Upgrade" \
-  -H "Upgrade: websocket" \
-  http://localhost:80/api/collab/room/test
-
-# Check collab-service logs
-docker-compose logs -f collab-service
-```
-
----
-
-### Migration to Kubernetes
-
-#### Prerequisites
-
-- Kubernetes cluster (Minikube for local, EKS/AKS for cloud)
-- kubectl configured
-- Docker images pushed to registry
-
-#### Quick Start with Kubernetes
-
-```bash
-# Use provided script
-chmod +x k8s-quick-start.sh
-./k8s-quick-start.sh
-
-# Or manual steps:
-
-# 1. Create namespace
-kubectl create namespace leetcode-collab
-
-# 2. Apply configurations
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/mongo.yaml
-kubectl apply -f k8s/redis.yaml
-kubectl apply -f k8s/auth-service.yaml
-kubectl apply -f k8s/question-service.yaml
-kubectl apply -f k8s/matching-service.yaml
-kubectl apply -f k8s/collab-service.yaml
-kubectl apply -f k8s/nginx-deployment.yaml
-kubectl apply -f k8s/ingress.yaml
-
-# 3. Verify deployment
-kubectl get pods -n leetcode-collab
-kubectl get svc -n leetcode-collab
-
-# 4. Access application
-kubectl port-forward svc/nginx-gateway 80:80 -n leetcode-collab
-# Visit http://localhost:80
-```
-
-#### Key Kubernetes Files
-
-| File | Purpose |
-|------|---------|
-| `k8s/namespace.yaml` | Create isolated namespace |
-| `k8s/mongo.yaml` | MongoDB StatefulSet + PVC |
-| `k8s/redis.yaml` | Redis Deployment |
-| `k8s/auth-service.yaml` | Auth Deployment + Service |
-| `k8s/ingress.yaml` | Expose services to external traffic |
-
-**Resource Configuration Example**:
-```yaml
-containers:
-  - name: auth-service
-    resources:
-      requests:
-        memory: "256Mi"
-        cpu: "250m"
-      limits:
-        memory: "2Gi"
-        cpu: "500m"
-    livenessProbe:
-      httpGet:
-        path: /health
-        port: 8000
-      initialDelaySeconds: 30
-      periodSeconds: 10
-    readinessProbe:
-      httpGet:
-        path: /health
-        port: 8000
-      initialDelaySeconds: 10
-      periodSeconds: 5
-```
-
----
-
-### Common Workflows
-
-#### Testing Authentication Flow
-
-```bash
-# 1. Start services
-docker-compose up
-
-# 2. Register user
-curl -X POST http://localhost/api/auth/sign-up \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "Test123!",
-    "name": "Test User"
-  }'
-
-# 3. Sign in
-curl -X POST http://localhost/api/auth/sign-in \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "Test123!"
-  }' | jq '.data.token' -r > token.txt
-
-# 4. Test protected endpoint
-curl -X GET http://localhost/api/users/user_123/profile \
-  -H "Authorization: Bearer $(cat token.txt)"
-```
-
-#### Testing Real-Time Features
-
-**Collab Editor**:
-```bash
-# Terminal 1: Start containers
-docker-compose up
-
-# Terminal 2: Connect to WebSocket
-wscat -c "ws://localhost/api/collab/room/test_token?userId=user1&token=$(cat token.txt)"
-
-# Terminal 3: Connect second client
-wscat -c "ws://localhost/api/collab/room/test_token?userId=user2&token=$(cat token.txt)"
-
-# In either terminal: Type updates and see them in the other
-```
-
-**Matching Queue**:
-```bash
-# 1. Start queue events stream (Terminal 1)
-curl -N "http://localhost/api/matching/queue-events/user1?token=$(cat token.txt)"
-
-# 2. Join queue from another terminal
-curl -X POST http://localhost/api/matching/queue \
-  -H "Authorization: Bearer $(cat token.txt)" \
-  -d '{
-    "userId": "user1",
-    "topic": "arrays",
-    "difficulty": "medium"
-  }'
-
-# Watch for match_found event in Terminal 1
-```
-
----
-
-### Performance Benchmarking
-
-#### Load Testing
-
-```bash
-# Install Apache Bench
-# brew install httpd
-
-# Test API endpoint
-ab -n 1000 -c 10 http://localhost/api/questions/question/random
-
-# Results:
-# Requests per second: 150
-# Failed requests: 0
-# Longest response: 200ms
-```
-
-#### WebSocket Load Testing
-
-```bash
-# Use websocket-bench
-npm install -g websocket-bench
-
-websocket-bench autobahn \
-  -c ws://localhost/api/collab/room/test
-```
 
 ---
 
@@ -1633,13 +981,11 @@ PeerPrep's containerized microservices architecture provides:
 
 1. **Modularity**: Independent service deployment and scaling
 2. **Resilience**: Container restarts, health checks, job queues
-3. **Developer Experience**: Hot reload, easy debugging, single command startup
+3. **Developer Experience**: Easy debugging, single command startup
 4. **Production Ready**: Multi-stage builds, non-root users, Kubernetes support
 5. **Real-Time Features**: WebSocket infrastructure for collaboration and chat
 
 The combination of Docker for development and Kubernetes for production ensures consistency across environments while maintaining the flexibility to scale individual components based on demand.
 
 For additional guidance, see:
-- [`./k8s/guides/k8s_local_guide.md`](./k8s/guides/k8s_local_guide.md)
-- [`./auth-service/README.md`](./auth-service/README.md)
-- [`./frontend/README.md`](./frontend/README.md)
+
