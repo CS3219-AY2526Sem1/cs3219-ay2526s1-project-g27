@@ -146,7 +146,7 @@ services:
     image: mongo:7
     container_name: mongo-auth-dev
     ports:
-      - "27017:27017"
+      - "27017"
     networks: 
       - leetcode_collab_net
     volumes:

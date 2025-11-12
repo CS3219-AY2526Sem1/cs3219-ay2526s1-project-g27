@@ -324,5 +324,23 @@ Given the nginx config and docker-compose, write me the kubernetes config files 
 Modified to use own files, changed some settings like memory etc
 REMOVED from use. Decide to not pursue this NTH
 
+# Date / Time
+13-11-2025
+# Tool:
+Claude Sonnet 4.5
+
+# Prompt / Command / Description:
+Given the code files , and the format I have shown of how to write a README.md and also the design choices and architecture from this given text, generate me the README.md for this file. (Iterated on this )
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+
+# Author Notes:
+It was not correct and hallucinated some DB schema points. Verified it and made appropriate changes. But it pops out a README.md template backbone. For architecture and design choices, made sure it was edited.
+
+
+
 
 
