@@ -1,3 +1,13 @@
+/*
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# - Template code, iterated on it 
+# Author review: 
+# - Verify through running 
+# - Code inspection and changes as needed 
+# */
+
 import { MongoClient, Db, Collection } from "mongodb";
 import { UserProfile, UserAuth } from "../models/Profile";
 

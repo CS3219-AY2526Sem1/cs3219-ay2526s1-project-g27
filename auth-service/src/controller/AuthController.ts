@@ -28,7 +28,7 @@ function getJWKS() {
       throw new Error('AUTH_SERVICE_JWKS environment variable is not set');
     }
 
-    console.log('🔐 Initializing JWKS from:', jwksUrl);
+    console.log(' Initializing JWKS from:', jwksUrl);
     cachedJWKS = createRemoteJWKSet(new URL(jwksUrl));
     jwksInitialized = true;
     console.log('✅ JWKS cache initialized successfully');
@@ -43,7 +43,7 @@ export class AuthController {
     const startTime = Date.now();
     
     // Log incoming request for Docker visibility
-    console.log('🔍 [AUTH_VERIFY] Request received:', {
+    console.log('[AUTH_VERIFY] Request received:', {
       method: req.method,
       path: req.path,
       hasAuthHeader: !!req.headers.authorization,
@@ -67,9 +67,6 @@ export class AuthController {
         });
       }
 
-      // Log token prefix for debugging (never log full token!)
-      console.log('🔑 [AUTH_VERIFY] Token prefix:', token.substring(0, 20) + '...');
-
       // Get cached JWKS (initializes on first call)
       const JWKS = getJWKS();
 
@@ -82,7 +79,7 @@ export class AuthController {
       const duration = Date.now() - startTime;
       
       // Success logging - visible in Docker logs
-      console.log('✅ [AUTH_VERIFY] JWT VALIDATED SUCCESSFULLY', {
+      console.log('[AUTH_VERIFY] JWT VALIDATED SUCCESSFULLY', {
         userId: payload.id,
         email: payload.email,
         duration: `${duration}ms`,
@@ -125,7 +122,7 @@ export class AuthController {
    * Health check endpoint to verify JWKS is initialized
    */
   static async healthCheck(req: Request, res: Response): Promise<Response> {
-    console.log('🏥 [HEALTH] Auth service health check');
+    console.log('[HEALTH] Auth service health check');
     
     return res.status(200).json({
       status: 'ok',

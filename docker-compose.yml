@@ -1,5 +1,12 @@
+# /*
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# - Generated Docker  compose file for all our services
+# Author review: 
+# - Verify through running, and reading it.
+# */
 services:
-  # Nginx Gateway - Serves frontend and proxies API requests
   nginx-gateway:
     build:
       context: .
@@ -9,7 +16,6 @@ services:
       - "80:80" 
     volumes:
       - ./logs/nginx:/var/log/nginx
-      # Mount nginx config for easier development changes
       - ./nginx-gateway/config/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - leetcode_collab_net
@@ -22,10 +28,10 @@ services:
   auth-service:
     build:
       context: ./auth-service
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: auth-service-dev
     ports:
-      - "8000:8000"
+      - "8000"
     volumes:
       - ./auth-service:/app
       - /app/node_modules
@@ -44,7 +50,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: react-app-dev
     ports:
-      - "5173:5173"  # Exposed for direct access during development
+      - "5173"  # Exposed for direct access during development
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -66,7 +72,7 @@ services:
       dockerfile: dockerfile
     container_name: question-service-dev
     ports:
-      - "3013:3013"
+      - "3013"
     volumes:
       - ./question-service:/app
       - /app/node_modules
@@ -86,7 +92,7 @@ services:
       - ./matching-service:/app
       - /app/node_modules
     ports:
-      - "3001:3001"
+      - "3001"
     env_file:
       - .env
     networks:
@@ -101,7 +107,7 @@ services:
       context: ./collab/server
     container_name: collab-service-dev
     ports:
-      - "8081:8081"  # Expose Yjs WebSocket server
+      - "8081"  # Expose Yjs WebSocket server
     restart: unless-stopped
     env_file:
       - .env
@@ -117,7 +123,7 @@ services:
       context: ./chat
     container_name: chat-service-dev
     ports:
-      - "8082:8082"
+      - "8082"
     restart: unless-stopped
     env_file:
       - .env
@@ -129,7 +135,7 @@ services:
     image: redis:7-alpine
     container_name: redis-dev
     ports:
-      - "6379:6379"
+      - "6379"
     networks: 
       - leetcode_collab_net
     command: redis-server --appendonly no --save ""

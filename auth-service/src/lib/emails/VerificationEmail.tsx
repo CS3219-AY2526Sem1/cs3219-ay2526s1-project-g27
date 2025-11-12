@@ -1,3 +1,12 @@
+/*
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet
+# Scope: 
+# - Generate Email template for sending emails using resend 
+# Author review: 
+# - Through actually using it 
+# - Read the code 
+*/
 // src/emails/VerificationEmail.tsx
 import * as React from 'react';
 import {

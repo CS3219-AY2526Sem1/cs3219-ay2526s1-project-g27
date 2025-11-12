@@ -1,3 +1,14 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5)
+Scope: 
+- Generated initial boiler plate UI
+- Debugging 
+Author review: 
+- Verfied for correctness by reading code
+- Tested using local 
+*/
+
 import { useAuth } from "@/context/AuthContext";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";

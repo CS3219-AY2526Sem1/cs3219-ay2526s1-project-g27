@@ -14,7 +14,7 @@ How to setup a service that uses redis, bullmq and bullboard while dockerizing i
 - Generated sample server.js file to check if the project can setup correctly.
 
 # Action Taken:
-- [] Accepted as-is 
+- [ ] Accepted as-is 
 - [X] Modified
 - [ ] Rejected
 # Author Notes:
@@ -34,7 +34,7 @@ How do I implement Server Side Events such that each user is notified on the eve
 - Sample code on how to create Server Side Events on both client and server
 
 # Action Taken:
-- [] Accepted as-is 
+- [ ] Accepted as-is 
 - [X] Modified
 - [ ] Rejected
 # Author Notes:
@@ -52,7 +52,7 @@ How does the server side handle accept match? I need 2 users to accept the match
 Provided the flow on how should be done with suggested code.
 
 # Action Taken:
-- [] Accepted as-is 
+- [ ] Accepted as-is 
 - [X] Modified
 - [ ] Rejected
 # Author Notes:
@@ -87,7 +87,7 @@ Advise on how i should be breaking up this code into files. (Provided the entire
 Recommended File Structure
 
 # Action Taken:
-- [] Accepted as-is 
+- [ ] Accepted as-is 
 - [X] Modified
 - [ ] Rejected
 # Author Notes:
@@ -104,7 +104,7 @@ Currently the match page logic is all here in one file (Copied and pasted code o
 Recommended files to create and how should the logic be separated. Also provided some backbone code.
 
 # Action Taken:
-- [] Accepted as-is 
+- [ ] Accepted as-is 
 - [X] Modified
 - [ ] Rejected
 # Author Notes:
@@ -122,7 +122,7 @@ Recommended UI for the button creation.
 
 # Action Taken:
 - [X] Accepted as-is 
-- [] Modified
+- [ ] Modified
 - [ ] Rejected
 # Author Notes:
 Copied the UI into QueueDisplayTime.tsx and works.
@@ -139,7 +139,7 @@ Code adjustments to current processJob function.
 
 # Action Taken:
 - [X] Accepted as-is 
-- [] Modified
+- [ ] Modified
 - [ ] Rejected
 # Author Notes:
 Tested and works.
@@ -156,7 +156,7 @@ Code adjustments to MatchContext.tsx file
 
 # Action Taken:
 - [X] Accepted as-is 
-- [] Modified
+- [ ] Modified
 - [ ] Rejected
 # Author Notes:
 Went through many iterations of back and forth asking how to implement and along the way, realised that some edits suggested were the reasons of the bugs spotted. Finally, Claude gave the implementation that tackled the bugs and problems I highlighted.
@@ -172,7 +172,7 @@ Asked if the error on removing job is because of processJob function holding ont
 Replied yes and suggested ways to overcome the problem
 
 # Action Taken:
-- [] Accepted as-is 
+- [ ] Accepted as-is 
 - [X] Modified
 - [ ] Rejected
 # Author Notes:
@@ -190,7 +190,7 @@ Replied with a few variations.
 
 # Action Taken:
 - [X] Accepted as-is 
-- [] Modified
+- [ ] Modified
 - [ ] Rejected
 # Author Notes:
 Went through the suggested solutions and chose the solution that fits the logic of what I want. Tested and works.
@@ -206,7 +206,7 @@ This is my current matching criteria. I want to evolve it to weighted matching. 
 Replied with a few variations.
 
 # Action Taken:
-- [] Accepted as-is 
+- [ ] Accepted as-is 
 - [X] Modified
 - [ ] Rejected
 # Author Notes:

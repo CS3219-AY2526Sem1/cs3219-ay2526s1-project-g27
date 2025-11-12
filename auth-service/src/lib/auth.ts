@@ -1,3 +1,13 @@
+/*
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# -  Make small amendments such as email verification functions 
+# Author review: 
+# - Verify through running 
+# - Read the code 
+# */
+
 import { betterAuth } from "better-auth";
 import { jwt, openAPI } from "better-auth/plugins"
 import { MongoClient } from "mongodb";
@@ -22,7 +32,6 @@ export type User = {
   emailVerified: boolean;
   createdAt: Date; 
   updatedAt: Date;
-  currentRating: number;
 };
 
 
@@ -96,7 +105,6 @@ export const auth = betterAuth({
         const profileCollection = db.collection("profiles");
         await profileCollection.insertOne({
           userId: user.id,
-          currentRating: 1000,
           problemsSolved: [],
           createdAt: new Date(),
           updatedAt: new Date()
@@ -130,7 +138,6 @@ export const auth = betterAuth({
             const profileCollection = db.collection("profiles");
             await profileCollection.insertOne({
               userId: user.id,
-              currentRating: 1000,
               problemsSolved: [],
               createdAt: new Date(),
               updatedAt: new Date(),
