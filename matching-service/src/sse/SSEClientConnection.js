@@ -6,6 +6,7 @@ Scope:
 - Explore possible options to store the client connections.
 Author review: 
 - Accepted the recommendation of keeping a map to store the existing client connections.
+- Copied the backbone of class declaration and added modifications.
 */
 
 const SSEClientConnections = new Map();

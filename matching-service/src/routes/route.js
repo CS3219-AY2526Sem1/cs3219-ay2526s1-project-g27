@@ -1,14 +1,13 @@
 /*
 AI Assistance Disclosure:
-Tool: ChatGPT 5  Flash date: 2025-9-28 22:00
+Tool: ChatGPT 5  Flash date: 2025-9-28 22:00 / 2025-10-30 / 2025-11-1
 Tool: Gemini 2.5 Flash date: 2025-10-12 18:00
-Tool: ChatGPT 5 date: 2025-10-30
 Scope: 
 - Advise on how implementation of Server Side Events should work.
 - Solving bug on user being able to match himself.
 Author review: 
 - Followed recommended logic flow sketch provided.
-- Followed debugging solution, tested and works.
+- Followed debugging solution of creating SSEConnectionLock with API endpoint call, tested and works.
 */
 
 const axios = require("axios");

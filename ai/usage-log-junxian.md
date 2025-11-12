@@ -25,7 +25,7 @@ How to setup a service that uses redis, bullmq and bullboard while dockerizing i
 # Date / Time:
 2025-9-28 22:00
 # Tool:
-ChatGPT 5 
+ChatGPT 5 / Gemini 2.5 Flash
 # Prompt/Command:
 How do I implement Server Side Events such that each user is notified on the events emitted by BullMQ?
 
@@ -39,7 +39,7 @@ How do I implement Server Side Events such that each user is notified on the eve
 - [ ] Rejected
 # Author Notes:
 - Modified the tracking of a Server Side Event connection with user by adding jobId associated with user in queue
-- Proceeded with the suggestion of a class creation called SSEClientConnection with some modifications
+- Proceeded with the suggestion of a class creation called SSEClientConnection. Copied the backbone of the class declaration but with some modifications
 
 # Date / Time:
 2025-9-29 15:30
@@ -132,10 +132,12 @@ Copied the UI into QueueDisplayTime.tsx and works.
 # Tool:
 ChatGPT 5 
 # Prompt/Command:
-Recheck after lock failure implementation for processJob function.
+- Bug arises for worker processing job as there is race condition. Asked for suggestion on how to deal with race condition.
+- After lock failure implementation for processJob function, error occurs. Asked to debug.
 
 # Output Summary:
-Code adjustments to current processJob function.
+- Followed the recommendation of using redlock.
+- Copy and paseted the code adjustments suggestion to current processJob function.
 
 # Action Taken:
 - [X] Accepted as-is 
@@ -211,3 +213,21 @@ Replied with a few variations.
 - [ ] Rejected
 # Author Notes:
 Read through the suggested solution and made few minor modifications of logic.
+
+# Date / Time:
+2025-11-1
+# Tool:
+ChatGPT 5
+# Prompt/Command:
+- If both browsers calls this API (referring to the API that establishes the SSE connection), will there be any race condition and still allow both connections?
+- The lock still allows same user to establish connection in both browsers, why?
+
+# Output Summary:
+Yes with explanation why. Also, proposed the usage of a lock to prevent allowing the same user to establish connection in both browswers.
+
+# Action Taken:
+- [X] Accepted as-is 
+- [ ] Modified
+- [ ] Rejected
+# Author Notes:
+Read through the suggested solution and copied code that prevents bug. Tested and works.
