@@ -1,3 +1,12 @@
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# - Boiler Docker file 
+# Author review: 
+# - Verify through running 
+# - Read the code 
+
+
 # Use the official Node.js image as a base
 FROM node:22-alpine
 

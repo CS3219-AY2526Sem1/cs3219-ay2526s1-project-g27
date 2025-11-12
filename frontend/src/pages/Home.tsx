@@ -7,7 +7,7 @@ import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 
 
 const HomePage: FC = () => {
-  const { user, jwt, logout } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-50 px-4">

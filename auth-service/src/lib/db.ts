@@ -1,4 +1,4 @@
-# /*
+/*
 # AI Assistance Disclosure:
 # Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
 # Scope: 

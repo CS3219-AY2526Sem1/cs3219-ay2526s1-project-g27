@@ -1,4 +1,4 @@
-# /*
+/*
 # AI Assistance Disclosure:
 # Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
 # Scope: 
@@ -32,7 +32,6 @@ export type User = {
   emailVerified: boolean;
   createdAt: Date; 
   updatedAt: Date;
-  currentRating: number;
 };
 
 
@@ -106,7 +105,6 @@ export const auth = betterAuth({
         const profileCollection = db.collection("profiles");
         await profileCollection.insertOne({
           userId: user.id,
-          currentRating: 1000,
           problemsSolved: [],
           createdAt: new Date(),
           updatedAt: new Date()
@@ -140,7 +138,6 @@ export const auth = betterAuth({
             const profileCollection = db.collection("profiles");
             await profileCollection.insertOne({
               userId: user.id,
-              currentRating: 1000,
               problemsSolved: [],
               createdAt: new Date(),
               updatedAt: new Date(),

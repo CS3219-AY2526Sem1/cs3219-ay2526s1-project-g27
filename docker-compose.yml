@@ -31,7 +31,7 @@ services:
       dockerfile: Dockerfile
     container_name: auth-service-dev
     ports:
-      - "8000:8000"
+      - "8000"
     volumes:
       - ./auth-service:/app
       - /app/node_modules
@@ -50,7 +50,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: react-app-dev
     ports:
-      - "5173:5173"  # Exposed for direct access during development
+      - "5173"  # Exposed for direct access during development
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -72,7 +72,7 @@ services:
       dockerfile: dockerfile
     container_name: question-service-dev
     ports:
-      - "3013:3013"
+      - "3013"
     volumes:
       - ./question-service:/app
       - /app/node_modules
@@ -92,7 +92,7 @@ services:
       - ./matching-service:/app
       - /app/node_modules
     ports:
-      - "3001:3001"
+      - "3001"
     env_file:
       - .env
     networks:
@@ -107,7 +107,7 @@ services:
       context: ./collab/server
     container_name: collab-service-dev
     ports:
-      - "8081:8081"  # Expose Yjs WebSocket server
+      - "8081"  # Expose Yjs WebSocket server
     restart: unless-stopped
     env_file:
       - .env
@@ -123,7 +123,7 @@ services:
       context: ./chat
     container_name: chat-service-dev
     ports:
-      - "8082:8082"
+      - "8082"
     restart: unless-stopped
     env_file:
       - .env
@@ -135,7 +135,7 @@ services:
     image: redis:7-alpine
     container_name: redis-dev
     ports:
-      - "6379:6379"
+      - "6379"
     networks: 
       - leetcode_collab_net
     command: redis-server --appendonly no --save ""
@@ -146,7 +146,7 @@ services:
     image: mongo:7
     container_name: mongo-auth-dev
     ports:
-      - "27017:27017"
+      - "27017"
     networks: 
       - leetcode_collab_net
     volumes:
