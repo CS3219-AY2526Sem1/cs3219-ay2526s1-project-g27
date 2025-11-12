@@ -341,6 +341,21 @@ Given the code files , and the format I have shown of how to write a README.md a
 It was not correct and hallucinated some DB schema points. Verified it and made appropriate changes. But it pops out a README.md template backbone. For architecture and design choices, made sure it was edited.
 
 
+# Date / Time
+13-11-2025
+# Tool:
+Claude Sonnet 4.5
 
+# Prompt / Command / Description:
+Using the `nginx.conf` and the architecture decisions and design from our project slides and project, generate the README.md according to the same format as `insert format README.md`
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+
+# Author Notes:
+Edied and remove architecture decision and design that is not credited us.
+Heavy vetted as such but took the other methods and read over it.
 
 
