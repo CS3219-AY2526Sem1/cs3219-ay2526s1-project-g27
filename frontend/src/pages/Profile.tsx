@@ -1,16 +1,9 @@
 /*
 AI Assistance Disclosure:
-<<<<<<< HEAD
-Tool: ChatGPT (model: GPT‑5) date: 2025-9-14, 2025-9-25, 2025-10-15, 2025-11-09
-Scope: 
-- Generated initial code
-- Constant changing the UI to fit the endpoints (user endpoint)
-=======
 Tool: ChatGPT (model: GPT‑5) date: 2025-9-14, 2025-9-25, 2025-10-15
 Scope: 
 - Generated initial code
 - Constant changing the UI 
->>>>>>> dev
 - Writing frontend code based on iterated changes
 - Debugging 
 Author review: 
