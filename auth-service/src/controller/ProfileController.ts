@@ -170,7 +170,6 @@ export class ProfileController {
       const updatedProfile = await profilesCollection.findOne({ userId: id });
       if (!updatedProfile) {
         // This case might happen if a user exists but has no profile document yet.
-        // Depending on your application logic, you might want to create one here.
         res.status(404).json({ error: "Profile not found after update" });
         return;
       }

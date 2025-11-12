@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collab-service
+  namespace: leetcode-collab
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: collab-service
+  template:
+    metadata:
+      labels:
+        app: collab-service
+    spec:
+      containers:
+      - name: collab-service
+        # image: PLACEHOLDER/collab-service:latest  # ← We'll replace this
+        image: collab-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8081
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collab-service
+  namespace: leetcode-collab
+spec:
+  selector:
+    app: collab-service
+  ports:
+  - port: 8081
+    targetPort: 8081
+  sessionAffinity: ClientIP  # ← Sticky sessions
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 hours
+  type: ClusterIP
