@@ -1,5 +1,17 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5)
+Scope: 
+- Generated initial boiler plate UI
+Author review: 
+- Verfied for correctness by reading code
+- Tested using local 
+*/
+
+
 import { type FC } from 'react';
 import { Routes, Route } from 'react-router-dom';
+
 
 import HomePage from '@/pages/Home';
 import ProfilePage from '@/pages/Profile';

@@ -70,7 +70,6 @@ export class ProfileController {
       const profileData: CreateProfileInput = {
         userId: id, // Better Auth user ID
         handles: req.body.handle,
-        currentRating: req.body.currentRating || 1000,
         problemsSolved: req.body.problemsSolved || [],
         biography: "",
       };
@@ -171,7 +170,6 @@ export class ProfileController {
       const updatedProfile = await profilesCollection.findOne({ userId: id });
       if (!updatedProfile) {
         // This case might happen if a user exists but has no profile document yet.
-        // Depending on your application logic, you might want to create one here.
         res.status(404).json({ error: "Profile not found after update" });
         return;
       }
@@ -203,50 +201,6 @@ export class ProfileController {
   }
 
 
-  // NO LONGER USED 
-  // static async updateProfile(req: Request, res: Response): Promise<void> {
-  //   try {
-  //     const { id } = req.params; // Better Auth user ID
-
-  //     const profilesCollection = getProfileCollection();
-
-  //     // Prepare update data
-  //     const updateData: UpdateProfileInput = {
-  //       currentRating: req.body.currentRating,
-  //       problemsSolved: req.body.problemsSolved,
-  //       updatedAt: new Date(),
-  //     };
-
-  //     // Remove undefined fields
-  //     const filteredUpdate = Object.fromEntries(
-  //       Object.entries(updateData).filter(([_, v]) => v !== undefined)
-  //     );
-
-  //     if (Object.keys(filteredUpdate).length === 0) {
-  //       res.status(400).json({ error: "No valid fields to update" });
-  //       return;
-  //     }
-
-  //     const result = await profilesCollection.findOneAndUpdate(
-  //       { userId: id },
-  //       { $set: filteredUpdate },
-  //       { returnDocument: "after" }
-  //     );
-
-  //     if (!result) {
-  //       res.status(404).json({ error: "Profile not found" });
-  //       return;
-  //     }
-
-  //     res.status(200).json({
-  //       message: "Profile updated successfully",
-  //       data: result,
-  //     });
-  //   } catch (error) {
-  //     console.error("Error updating profile:", error);
-  //     res.status(500).json({ error: "Internal server error" });
-  //   }
-  // }
 
   // DELETE /api/v1/users/:id/profile - Delete user profile
   static async deleteProfile(req: Request, res: Response): Promise<void> {

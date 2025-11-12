@@ -1,3 +1,15 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5), Gemini 2.5 Pro
+Scope: 
+- Generated Initial boiler plate
+- Iterative improvement as auth changes , used documentation alogn with prompts
+- Debugging 
+Author review: 
+- Verfied for correctness by reading code
+- Tested using local 
+*/
+
 import { createContext, useContext, useState, useEffect, type ReactNode, type FC } from 'react';
 import type { User, AuthContextType } from '@/types';
 import { authClient } from '@/lib/auth-client'; 

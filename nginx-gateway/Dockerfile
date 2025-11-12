@@ -1,3 +1,12 @@
+# /*
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# - Generated Docker file for development
+# Author review: 
+# - Verify through running 
+# */
+
 # --- Stage 1: Build the React App ---
 # Use a Node.js image to build our frontend assets
 FROM node:22-alpine AS builder

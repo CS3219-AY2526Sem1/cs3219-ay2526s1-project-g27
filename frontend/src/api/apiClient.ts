@@ -1,3 +1,16 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5), Gemini 2.5 Pro
+Scope: 
+- Generated initial template
+- Kept it as it is for nginx routing 
+Author review: 
+- Verfied for correctness by reading code
+- Tested using local 
+*/
+
+
+
 import axios from 'axios';
 
 /**
