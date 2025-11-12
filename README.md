@@ -1,6 +1,6 @@
 # CS3219 Project: PeerPrep
 
-A comprehensive overview of PeerPrep, a real-time peer programming interview preparation platform where users can match with peers, collaborate on coding problems, and chat in real-time. This document covers the containerization strategy and deployment architecture of PeerPrep specifically in terms of Docker-based microservice architecture, container configurations, and deployment patterns.
+A comprehensive overview of PeerPrep, a real-time peer programming interview preparation platform where users can match with peers, collaborate on coding problems, and chat in real-time. This document covers the containerization strategy and deployment architecture of PeerPrep specifically in terms of Docker-based microservice architecture, container configurations, and deployment patterns. `master` is the working production branch and `dev` is the development branch.
 
 ## Table of Contents
 
@@ -144,14 +144,6 @@ FRONTEND_URL=http://localhost:80
 
 **Base Technology**: Express.js + Better Auth + Mongoose
 
-**Key Endpoints**:
-- `POST /api/auth/sign-up` - User registration
-- `POST /api/auth/sign-in` - JWT login
-- `GET /api/auth/jwks` - JWKS endpoint (used by nginx for JWT verification)
-- `POST /api/jwt/verify-jwt` - Token verification endpoint
-- `GET /api/users/{userId}/profile` - User profile retrieval
-- `PUT /api/users/{userId}/profile` - Update user profile
-
 **Dockerfile Strategy**: Development-optimized
 ```dockerfile
 FROM node:22-alpine
@@ -197,12 +189,6 @@ DB_LOCAL_URI=mongodb://mongo:27017
 
 **Base Technology**: Express.js + Mongoose
 
-**Key Endpoints**:
-- `GET /question/random` - Fetch random coding problem
-- `POST /question` - Create new question
-- `GET /question/:id` - Get question by ID
-- `GET /question/attempt/{userId}` - Get user's question attempts
-- `POST /question/attempt` - Log question attempt
 
 **Dockerfile Strategy**: Standard development setup
 ```dockerfile
@@ -248,13 +234,6 @@ JWT_SECRET=[secret]
 ```
 
 **Base Technology**: Express.js + BullMQ (job queue) + Redis
-
-**Key Endpoints**:
-- `POST /queue` - Join matching queue
-- `DELETE /queue/:userId` - Leave queue
-- `PUT /matches` - Accept match
-- `GET /queue-events/:userId` - SSE stream for match notifications
-- `HEAD /queue-events/:userId` - Check existence of user-specific event stream
 
 **Dockerfile Strategy**: Production-optimized with non-root user
 ```dockerfile
@@ -493,13 +472,13 @@ command: redis-server --appendonly no --save ""
 
 Detailed API documentation can be found in each of the microservices' README files, tagged below. 
 
-[`./auth-service/README.md`](./auth-service/README.md)
-[`./chat/README.md`](./chat/README.md)
-[`./collab/server/README.md`](./collab/server/README.md)
-[`./frontend/README.md`](./frontend/README.md)
-[`./matching-service/README.md`](./matching-service/README.md)
-[`./nginx-gateway/README.md`](./nginx-gateway/README.md)
-[`./question-service/README.md`](./question-service/README.md)
+- [`./auth-service/README.md`](./auth-service/README.md)
+- [`./chat/README.md`](./chat/README.md)
+- [`./collab/server/README.md`](./collab/server/README.md)
+- [`./frontend/README.md`](./frontend/README.md)
+- [`./matching-service/README.md`](./matching-service/README.md)
+- [`./nginx-gateway/README.md`](./nginx-gateway/README.md)
+- [`./question-service/README.md`](./question-service/README.md)
 
 ---
 
@@ -902,7 +881,4 @@ PeerPrep's containerized microservices architecture provides:
 3. **Developer Experience**: Easy debugging, single command startup
 5. **Real-Time Features**: WebSocket infrastructure for collaboration and chat
 
-The combination of Docker for development and Kubernetes for production ensures consistency across environments while maintaining the flexibility to scale individual components based on demand.
-
-For additional guidance, see:
-
+The use of Docker for development ensures consistency across environments.
