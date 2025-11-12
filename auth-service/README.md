@@ -433,3 +433,13 @@ Error: AUTH_SERVICE_JWKS environment variable is not set
 - Review service logs for hook execution errors
 - Manually check if profile exists in `profiles` collection using MongoDB Compass
 
+### Acknowledgement
+This `README.md` was generated with the help of AI. I have attached the relevant files and design choices already made and output a README.md following endpoints and schema actually used. Check `ai/usage-log-sean.md` for more.
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+Scope: 
+- Generate README.md given code files with the format
+- Added context of architecture design and then choices made from our slides.
+Verification:
+- Made schema edits and ensure architecture holds true and schema design is correct and done by me.
+
