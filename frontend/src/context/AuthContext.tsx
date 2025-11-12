@@ -19,6 +19,7 @@ export interface CustomAuthContextType extends AuthContextType {
   jwt: string | null;
   isLoading: boolean;
   refreshJwt: () => Promise<void>;
+  refreshSession: () => Promise<any>; 
   requestPasswordReset: (email: string, redirectTo?: string) => Promise<any>;
   resetPassword: (token: string, newPassword: string) => Promise<any>;
 }
@@ -42,7 +43,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const [jwt, setJwt] = useState<string | null>(null);
 
   // 1. Manage Session State
-  const { data: session, isPending: isLoading, error: sessionError } = authClient.useSession();
+  const { data: session, isPending: isLoading, error: sessionError, refetch: revalidateSession } = authClient.useSession();
 
   if (sessionError) {
     console.error("Error fetching session:", sessionError);
@@ -99,6 +100,13 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   } : null;
 
   const isAuthenticated = !!user;
+
+  const refreshSession = async () => {
+    console.log("Triggering session revalidation...");
+    await revalidateSession();
+    await refreshJwt();
+    console.log("Session revalidation complete.");
+  };
 
   const login = async (credentials: { email: string; password: string }) => {
     const result = await authClient.signIn.email(credentials);
@@ -193,8 +201,10 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     logout,
     signup,
     refreshJwt,
+    refreshSession,
     requestPasswordReset,
     resetPassword,
+
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

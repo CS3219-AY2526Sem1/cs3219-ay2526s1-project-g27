@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from '@/api/apiClient';
 import { type UserProfile, type UpdateProfilePayload } from '@/types';
+import { authClient } from '@/lib/auth-client'; 
 
 // Define a type for a single question attempt for better type safety
 interface QuestionAttempt {
@@ -41,7 +42,7 @@ interface EditableProfileData {
 }
 
 const ProfilePage: FC = () => {
-  const { user, isLoading: isAuthLoading, jwt } = useAuth(); // Destructure isLoading from auth
+  const { user, isLoading: isAuthLoading, jwt, refreshSession} = useAuth(); // Destructure isLoading from auth
 
   // --- State Management ---
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -84,7 +85,7 @@ const ProfilePage: FC = () => {
       console.error("Failed to fetch profile:", error);
       setStatus('error');
     }
-  }, [user?.username]); // Depend on user.username to re-initialize form if context changes
+  }, [user?.username]); 
 
   // Main effect to fetch all necessary data
   useEffect(() => {
@@ -99,11 +100,9 @@ const ProfilePage: FC = () => {
         })
         .catch(err => {
           console.error("Failed to fetch question attempts:", err);
-          // You could set a separate error state for attempts if needed
         });
     }
   }, [user?.id, isAuthLoading, jwt, fetchProfile]);
-  // --- Event Handlers ---
 
   const handleEditToggle = () => {
     if (!isEditing && profile) {
@@ -116,21 +115,43 @@ const ProfilePage: FC = () => {
     setIsEditing(!isEditing);
   };
 
-  const handleSaveClick = async () => {
+   const handleSaveClick = async () => {
     if (!user?.id) return;
 
     setIsSaving(true);
+    
     try {
-      const payload: UpdateProfilePayload = {
-        username: editableData.username,
+      const hasUsernameChanged = editableData.username !== user.username;
+      
+      if (hasUsernameChanged && editableData.username) {
+        console.log("Updating username in auth provider...");
+        const authUpdateResult = await authClient.updateUser({
+          name: editableData.username,
+        });
+
+        if (authUpdateResult?.error) {
+          throw new Error(`Auth update failed: ${authUpdateResult.error.message}`);
+        }
+      }
+
+
+      const profilePayload: Omit<UpdateProfilePayload, 'username'> = {
         biography: editableData.biography,
         handles: editableData.handles.filter(handle => handle && handle.trim() !== ''),
       };
-
-      const response = await apiClient.put<{ data: UserProfile }>(`/users/api/v1/users/${user.id}/profile`, payload);
+      
+      console.log("Updating profile data in application backend...");
+      const response = await apiClient.put<{ data: UserProfile }>(
+        `/users/api/v1/users/${user.id}/profile`, 
+        profilePayload
+      );
 
       setProfile(response.data.data);
       setIsEditing(false);
+
+
+      console.log("All updates successful, refreshing session...");
+      await refreshSession();
 
     } catch (error) {
       console.error("Failed to update profile:", error);
@@ -138,6 +159,7 @@ const ProfilePage: FC = () => {
       setIsSaving(false);
     }
   };
+
 
   // --- Dynamic Form 'handles' Handlers ---
 

@@ -20,10 +20,10 @@ import {
   UpdateProfileInput,
   solvedProblemSchema 
 } from "../models/Profile";
+import { auth } from "../lib/auth";
 import { z } from "zod";
 
 const updateProfileSchema = z.object({
-  username: z.string().optional(), 
   handles: z.array(z.string()).optional(),
   biography: z.string().optional(),
   problemsSolved: z.array(solvedProblemSchema).optional(),
@@ -111,94 +111,49 @@ export class ProfileController {
     try {
       const { id } = req.params;
 
-      // 1. Validate the user ID format
-      if (!ObjectId.isValid(id)) {
-        res.status(400).json({ error: "Invalid user ID format" });
-        return;
-      }
-
-      // 2. Validate the incoming request body against your Zod schema
       const validation = updateProfileSchema.safeParse(req.body);
       if (!validation.success) {
         res.status(400).json({
           error: "Validation error",
-          details: validation.error.flatten(),
+          details: validation.error
         });
         return;
       }
-
-      // 3. Separate username from other profile data
-      const { username, ...otherProfileData } = validation.data;
-      const userObjectId = new ObjectId(id);
-
-      // 4. Update the username in the 'users' collection if a new one is provided
-      if (username) {
-        const userCollection = getUserCollection();
-        try {
-          const userUpdateResult = await userCollection.findOneAndUpdate(
-            { _id: userObjectId },
-            { $set: { name: username, updatedAt: new Date() } }
-          );
-
-          // If no document was found to update, the user doesn't exist.
-          if (!userUpdateResult?._id) {
-            res.status(404).json({ error: "User not found" });
-            return;
-          }
-        } catch (error) {
-          console.error("Error updating username in users collection:", error);
-          res.status(500).json({ error: "Failed to update username" });
-          return;
-        }
-      }
-
-      // 5. Update the rest of the profile data in the 'profiles' collection
-      const profilesCollection = getProfileCollection();
-      if (Object.keys(otherProfileData).length > 0) {
-        const updateFields = {
-          ...otherProfileData,
-          updatedAt: new Date(),
-        };
-
-        await profilesCollection.findOneAndUpdate(
-          { userId: id }, // In the profiles collection, userId is a string
-          { $set: updateFields }
-        );
-      }
-
-      // 6. Fetch the complete, updated documents from both collections
-      const updatedProfile = await profilesCollection.findOne({ userId: id });
-      if (!updatedProfile) {
-        // This case might happen if a user exists but has no profile document yet.
-        res.status(404).json({ error: "Profile not found after update" });
+      
+       // 2. The data contains only profile-specific fields now.
+      const profileData = validation.data;
+      
+      // If there's nothing to update, we can return early.
+      if (Object.keys(profileData).length === 0) {
+        res.status(200).json({ message: "No profile data provided to update." });
         return;
       }
 
-      const updatedUser = await getUserCollection().findOne({ _id: userObjectId });
+      // 3. Update the data in the 'profiles' collection.
+      const profilesCollection = getProfileCollection();
+      const updateFields = {
+        ...profileData,
+        updatedAt: new Date(),
+      };
 
-      // 7. Send the successful response with the combined, updated data
+      const result = await profilesCollection.findOneAndUpdate(
+        { userId: id },
+        { $set: updateFields },
+        { upsert: true, returnDocument: 'after' } // upsert creates if not exists, returnDocument returns the updated doc
+      );
+      
+      // 4. Send the successful response
       res.status(200).json({
         message: "Profile updated successfully",
-        data: {
-          ...updatedProfile,
-          // Ensure the latest username from the users collection is sent back
-          username: updatedUser?.name,
-        },
+        data: result, // The result from findOneAndUpdate with returnDocument: 'after' is the updated doc
       });
 
     } catch (error) {
-      // Catch Zod validation errors specifically
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          error: "Validation error",
-          details: error,
-        });
-        return;
-      }
       console.error("Error updating profile:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   }
+
 
 
 
