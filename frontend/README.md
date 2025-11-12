@@ -2,22 +2,123 @@
 
 A React-based frontend for PeerPrep, a real-time peer programming interview preparation platform. Users can match with peers, collaborate on coding problems, and chat in real-time.
 
+---
+
 ## Table of Contents
 
-- [Quick Start](#quick-start)
-- [Project Structure](#project-structure)
-- [API Documentation](#api-documentation)
+- [Architecture](#architecture)
+- [API Calls](#api-calls)
+- [Real-Time Protocols](#real-time-protocols)
 - [Design Choices](#design-choices)
-- [Runbooks](#runbooks)
+- [Error Handling & Edge Cases](#error-handling--edge-cases)
+- [Setup and Running](#setup-and-running)
 
-## Quick Start
+---
+
+## Architecture
+
+The PeerPrep frontend is a React (Vite) single-page application (SPA). It consists of:
+
+* **React Components:** A mix of UI components (built with Radix UI and Tailwind CSS) and feature-specific components (e.g., `Editor.tsx`, `Chat.tsx`).
+* **Context-Based State:** Uses React Context (`AuthContext`, `MatchContext`) to manage global state for authentication and the matching lifecycle.
+* **API Client:** A centralized `axios` client configured in `src/api/apiClient.ts` for all HTTP communication with the backend microservices.
+* **Real-Time Clients:** Implements two real-time protocols:
+    * **Server-Sent Events (SSE):** For receiving matching status updates (`MatchContext`).
+    * **WebSocket (with Yjs):** For collaborative editing and chat (`Editor.tsx`, `Chat.tsx`).
+* **Routing:** Handled by React Router, including protected routes that redirect unauthenticated users to the login page.
+
+---
+
+## API Calls
+
+The frontend communicates with backend services via a proxy at `/api`.
+
+| Operation | HTTP Request | URI | HTTP Response (on success) |
+| :--- | :--- | :--- | :--- |
+| Sign In | `POST` | `/auth/sign-in` | **(via Better Auth)** Session + JWT |
+| Get User Profile | `GET` | `/users/api/v1/users/{userId}/profile` | `{ data: UserProfile }` |
+| Update User Profile | `PUT` | `/users/api/v1/users/{userId}/profile` | `{ data: UserProfile }` |
+| Get Question Attempts | `GET` | `/questions/question/attempt/{userId}` | `QuestionAttempt[]` |
+| Start Queue | `POST` | `/matching/queue` | User added to queue |
+| Leave Queue | `DELETE` | `/matching/queue/{userId}` | User removed from queue |
+| Accept Match | `PUT` | `/matching/matches/{matchId}` | Match accepted |
+| Check Match Status | `GET` | `/collab/match/status/{matchToken}` | `{ status: 'in_match' \| 'no_match' }` |
+| Get Random Question | `POST` | `/questions/question/random` | `{ id, title, description, ... }` |
+
+---
+
+## Real-Time Protocols
+
+### Matching (Server-Sent Events)
+
+The frontend listens for matching-related events via an SSE stream.
+
+| Event Source | URI | Purpose |
+| :--- | :--- | :--- |
+| Queue Events | `GET /api/matching/queue-events/{userId}` | Provides real-time notifications for match status (e.g., `matchFound`, `matchSuccess`). Handled by `MatchContext`. |
+
+### Collaboration (WebSocket)
+
+Real-time editing and chat are handled via WebSocket connections using the Yjs protocol.
+
+| Protocol | URI | Purpose |
+| :--- | :--- | :--- |
+| Yjs (WebSocket) | `ws://localhost/api/collab/room/{matchToken}` | Synchronizes code editor state (CRDTs) between peers. |
+| Yjs (WebSocket) | `ws://localhost/api/chat` | Synchronizes chat messages (Y.Array) between peers. |
+
+---
+
+## Design Choices
+
+1.  **State Management: Multi-Context Approach**
+    * Uses two primary React contexts: `AuthContext` for user/JWT state and `MatchContext` for queue/match state.
+    * **Rationale:** This separates concerns effectively for the application's complexity. It avoids the overhead of a larger state management library (like Redux) as state is not deeply nested.
+
+2.  **Matching Coordination: Lead Tab Pattern**
+    * To prevent duplicate SSE and WebSocket connections, only one browser tab (the "lead tab") maintains the active real-time connections.
+    * Other tabs listen for state changes via the `BroadcastChannel` API and `localStorage` (`storage` events).
+    * **Rationale:** This ensures a single source of truth for real-time events, prevents redundant server connections, and gracefully handles tab closures or refreshes by transferring leadership.
+
+3.  **Real-Time Collaboration: Yjs (CRDTs)**
+    * Uses **Yjs** over WebSockets for both the collaborative editor (with CodeMirror 6) and the chat.
+    * **Rationale:** Yjs is a Conflict-free Replicated Data Type (CRDT) library. It automatically handles merge conflicts without a central authority, which is ideal for a peer-to-peer programming scenario where both users can edit simultaneously.
+
+4.  **Authentication: JWT with Better Auth**
+    * The `Better Auth` client handles login/signup, providing a JWT. This JWT is then stored in React state (`AuthContext`) and sent in the `Authorization: Bearer {token}` header for all `axios` API requests.
+    * **Rationale:** JWTs are flexible, work well for WebSocket authentication (passed as a query parameter), and are better suited for microservice architectures (compared to stateful cookies) as they can be used across different subdomains.
+
+5.  **Form Validation: Zod + React Hook Form**
+    * Uses `Zod` for schema-based validation and `React Hook Form` for efficient, performance-oriented form state management.
+    * **Rationale:** This combination provides strong type-safety (inferring types from schemas), excellent TypeScript support, and high performance by minimizing component re-renders during form input.
+
+---
+
+## Error Handling & Edge Cases
+
+1.  **API Errors (401/403)**
+    * A global `axios` response interceptor (in `src/api/apiClient.ts`) catches all HTTP errors.
+    * It specifically handles 401 (Unauthorized) and 403 (Forbidden) responses, typically by logging the user out. Other errors are displayed to the user via toast notifications (Sonner).
+
+2.  **Multi-Tab Coordination**
+    * If the "lead tab" (handling SSE/WebSocket) is closed, the `BroadcastChannel` and `localStorage` mechanism allows another tab to detect the loss of leadership and take over.
+    * Matching state is persisted in `localStorage` (`matching-state`) to handle page refreshes without losing queue status.
+
+3.  **React Component Errors**
+    * A global React `ErrorBoundary` (`src/components/ErrorBoundary.tsx`) catches rendering errors in the component tree and displays a fallback UI instead of crashing the entire application.
+
+4.  **Unauthenticated Access**
+    * A `ProtectedRoute` component (`src/routes/ProtectedRoute.tsx`) wraps all private routes. If a user is not authenticated (checked via `AuthContext`), they are automatically redirected to the `/login` page.
+
+---
+
+## Setup and Running
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or yarn
+* Node.js 18+
+* npm or yarn
 
-### Installation & Development
+### Development Mode
 
 ```bash
 # Install dependencies
@@ -25,386 +126,3 @@ npm install
 
 # Start development server
 npm run dev
-
-# Build for production
-npm run build
-
-# Run linter
-npm lint
-```
-
-The app runs on `http://localhost:5173` and proxies API requests to the backend via nginx on `localhost:80`.
-
-## Project Structure
-
-```
-src/
-├── api/              # API client configuration
-├── components/       # React components (UI + features)
-├── context/          # React Context providers (Auth, Matching)
-├── lib/              # Utilities and helpers
-├── pages/            # Page components
-├── routes/           # Route definitions
-├── types/            # TypeScript type definitions
-└── utils/            # Utility functions
-```
-
-## API Documentation
-
-### Base Configuration
-
-The frontend uses [axios](https://axios-http.com/) for HTTP requests. The API client is configured in [`src/api/apiClient.ts`](src/api/apiClient.ts) with:
-
-- **Base URL**: `/api` (proxied through nginx to backend services)
-- **Timeout**: 10 seconds
-- **Credentials**: Disabled (JWT tokens passed in Authorization header)
-
-```typescript
-// Example API call
-import apiClient from '@/api/apiClient';
-
-const response = await apiClient.get('/users/api/v1/users/123/profile');
-```
-
-### Authentication
-
-**Endpoint**: `POST /auth/sign-in` (via Better Auth)
-
-The authentication system uses [Better Auth](https://better-auth.com/) with JWT plugin. See [`src/context/AuthContext.tsx`](src/context/AuthContext.tsx) for implementation.
-
-```typescript
-// Login example
-const result = await authClient.signIn.email({
-  email: 'user@example.com',
-  password: 'password123'
-});
-
-if (!result.error) {
-  const jwtToken = await fetchJwtToken();
-}
-```
-
-**Token Management**: 
-- JWT tokens are stored in state and automatically added to all API requests via the `Authorization` header
-- Token refresh is triggered on app load and after signup/login
-
-### User Profile API
-
-**Get Profile**
-```
-GET /users/api/v1/users/{userId}/profile
-Response: { data: UserProfile }
-```
-
-**Update Profile**
-```
-PUT /users/api/v1/users/{userId}/profile
-Body: { username?, biography?, handles?, problemsSolved? }
-Response: { data: UserProfile }
-```
-
-**Get Question Attempts**
-```
-GET /questions/question/attempt/{userId}
-Response: QuestionAttempt[]
-```
-
-See [`src/pages/Profile.tsx`](src/pages/Profile.tsx) for usage examples.
-
-### Matching API
-
-**Start Queue**
-```
-POST /matching/queue
-Body: { userId, topic, difficulty }
-```
-
-**Queue Events (Server-Sent Events)**
-```
-GET /api/matching/queue-events/{userId}?token={jwtToken}
-```
-
-Real-time event stream for match notifications. Implementation in [`src/context/MatchContext.tsx`](src/context/MatchContext.tsx).
-
-**Accept Match**
-```
-POST /matching/matches
-Body: { userId, matchId }
-```
-
-**Leave Queue**
-```
-DELETE /matching/queue/{userId}
-```
-
-**Check Match Status**
-```
-GET /collab/match/status/{matchToken}?token={jwtToken}
-Response: { status: 'in_match' | 'no_match' }
-```
-
-### Collaboration API
-
-**Collaborative Editing**
-```
-WebSocket: ws://localhost/api/collab/room/{matchToken}
-Params: { userId, token }
-Protocol: Yjs (CRDT-based real-time sync)
-```
-
-See [`src/components/collab/Editor.tsx`](src/components/collab/Editor.tsx) for implementation.
-
-**Chat**
-```
-WebSocket: ws://localhost/api/chat
-Params: { userId, token }
-Protocol: Yjs Y.Array for message sync
-```
-
-See [`src/components/chat/Chat.tsx`](src/components/chat/Chat.tsx) for usage.
-
-### Questions API
-
-**Get Random Question**
-```
-POST /questions/question/random
-Body: { categories: string[], difficulty: string }
-Response: { id, title, description, complexity, categories }
-```
-
-Used in [`src/context/MatchContext.tsx`](src/context/MatchContext.tsx) to verify question availability before matching.
-
-### Error Handling
-
-The API client includes a response interceptor in [`src/api/apiClient.ts`](src/api/apiClient.ts) that:
-
-- Logs all HTTP errors
-- Handles 401 (Unauthorized) and 403 (Forbidden) responses
-- Provides meaningful error messages to users via toast notifications
-
-## Design Choices
-
-### 1. State Management Architecture
-
-**Multi-Context Approach**
-- [`AuthContext`](src/context/AuthContext.tsx): Handles user authentication and JWT token lifecycle
-- [`MatchContext`](src/context/MatchContext.tsx): Manages matching state, queue status, and match lifecycle
-
-**Rationale**: Separates concerns and makes state predictable. Context is sufficient for this app's needs (no deep nesting, moderate state complexity).
-
-### 2. Matching System - Lead Tab Pattern
-
-The matching system uses a **lead tab pattern** to coordinate multiple browser tabs:
-
-- Only one tab (the "lead") maintains the SSE connection to the queue
-- Other tabs listen via `BroadcastChannel` API for state sync
-- Lead tab detects disconnection via heartbeat and transfers leadership to other tabs
-
-**Key Files**: [`src/context/MatchContext.tsx`](src/context/MatchContext.tsx)
-
-**Why this pattern?**
-- Prevents duplicate queue connections
-- Ensures only one active WebSocket to backend
-- Gracefully handles tab closing/refresh
-
-**State Persistence**:
-- Matching state stored in localStorage with key `matching-state`
-- Lead tab info stored with key `matching-lead-tab`
-- State synced across tabs via `storage` events and `BroadcastChannel`
-
-### 3. Real-Time Collaboration
-
-**Technologies**:
-- **Yjs**: CRDT library for conflict-free collaborative editing
-- **WebSocket**: Direct bidirectional communication
-- **CodeMirror 6**: Editor with Yjs bindings for live code sync
-
-**Design Decision**: 
-Chose Yjs because it handles merge conflicts automatically without a central authority, ideal for peer programming where both users edit simultaneously.
-
-See [`src/components/collab/Editor.tsx`](src/components/collab/Editor.tsx) and [`src/components/chat/Chat.tsx`](src/components/chat/Chat.tsx).
-
-### 4. Authentication Flow
-
-**JWT-Based with Better Auth**
-
-1. User logs in → Better Auth returns session + JWT
-2. JWT is extracted and stored in React state
-3. All API requests include `Authorization: Bearer {token}` header
-4. Token is refreshed on app load via [`fetchJwtToken()`](src/context/AuthContext.tsx)
-
-**Why JWT over cookies?**
-- Works across different subdomains (future-proof for microservices)
-- Explicit token management for WebSocket auth
-- Better CORS handling
-
-### 5. Component Architecture
-
-**UI Components**: 
-Located in [`src/components/ui/`](src/components/ui/) - built with Radix UI primitives and Tailwind CSS for accessibility and consistency.
-
-**Feature Components**:
-- [`Editor.tsx`](src/components/collab/Editor.tsx): Collaborative code editor
-- [`Chat.tsx`](src/components/chat/Chat.tsx): Real-time chat widget
-- [`LoginForm.tsx`](src/components/LoginForm.tsx) & [`RegisterForm.tsx`](src/components/RegisterForm.tsx): Auth forms with Zod validation
-- [`QueueTimerDisplay.tsx`](src/components/QueueTimerDisplay.tsx): Matching queue timer
-
-**Rationale**: Separation of concerns, reusability, and testability.
-
-### 6. Form Validation
-
-**Zod + React Hook Form**
-
-Uses [Zod](https://zod.dev/) for schema validation and [React Hook Form](https://react-hook-form.com/) for efficient form state management.
-
-Example from [`src/components/LoginForm.tsx`](src/components/LoginForm.tsx):
-
-```typescript
-const formSchema = z.object({
-  email: z.email("Please enter a valid email."),
-  password: z.string().min(6, "Password must be at least 6 characters.")
-});
-```
-
-**Why Zod?** Type-safe, zero dependencies, great TypeScript support.
-
-### 7. Error Handling
-
-**Global Error Boundary**: [`src/components/ErrorBoundary.tsx`](src/components/ErrorBoundary.tsx)
-- Catches React component errors and displays fallback UI
-
-**Protected Routes**: [`src/routes/ProtectedRoute.tsx`](src/routes/ProtectedRoute.tsx)
-- Redirects unauthenticated users to login
-
-**Toast Notifications**: Uses [Sonner](https://sonner.emilkowal.ski/) for user feedback
-
-## Runbooks
-
-### Running the Application
-
-#### Development Mode
-
-```bash
-npm install
-npm run dev
-```
-
-**Expected Output**:
-```
-  VITE v7.1.2  ready in 234 ms
-
-  ➜  Local:   http://localhost:5173/
-  ➜  press h to show help
-```
-
-Access the app at `http://localhost:5173`.
-
-#### Build for Production
-
-```bash
-npm run build
-```
-
-Output is generated in the `dist/` folder. Serve with:
-
-```bash
-npm run preview
-```
-
-#### Linting
-
-```bash
-npm run lint
-```
-
-Checks TypeScript and ESLint rules. Configuration in [`eslint.config.js`](eslint.config.js).
-
-### Docker Development
-
-```bash
-docker-compose -f docker-compose.dev.yml up
-```
-
-The container runs the dev server on `http://localhost:5173` with hot-reload enabled.
-
-See [`Dockerfile.dev`](Dockerfile.dev) and [`docker-compose.dev.yml`](docker-compose.dev.yml).
-
-### Troubleshooting
-
-#### API Requests Failing
-
-1. **Check nginx proxy**: Ensure the backend gateway is running on `localhost:80`
-2. **Check environment**: Verify `VITE_BETTER_AUTH_URL` in `.env`
-3. **Check token**: Inspect browser DevTools → Network → Request headers for `Authorization` header
-
-#### WebSocket Connection Issues
-
-1. **Check WebSocket endpoint**: Should be `ws://localhost/api/collab/room` or `ws://localhost/api/chat`
-2. **Check credentials**: Pass `token` query parameter for authentication
-3. **Check connection status**: See [`src/components/collab/Editor.tsx`](src/components/collab/Editor.tsx) for connection state management
-
-#### Multi-Tab Issues
-
-1. **Check localStorage**: Inspect `matching-state` and `matching-lead-tab` keys
-2. **Check BroadcastChannel**: Open two tabs and verify communication via console logs
-3. **Reset state**: Clear localStorage and refresh
-
-```javascript
-// Browser console
-localStorage.removeItem('matching-state');
-localStorage.removeItem('matching-lead-tab');
-```
-
-#### Build Failures
-
-1. **Clear cache**: `rm -rf node_modules .vite`
-2. **Reinstall**: `npm install`
-3. **Check Node version**: Requires Node 18+
-
-### Monitoring & Debugging
-
-#### Enable Verbose Logging
-
-Most components log to console. Check DevTools Console for:
-- API requests: `[API Request]` prefixed logs
-- Matching events: `✅`, `⚠️`, `🔗` emoji prefixes
-- SSE events: `[SSE]` prefixed logs
-- WebSocket: `WebSocket` messages
-
-#### Browser DevTools
-
-- **Network Tab**: Monitor API requests, WebSocket connections
-- **Application Tab**: Inspect localStorage, sessionStorage
-- **Console**: View logs and errors
-
-### Common Workflows
-
-#### Testing Authentication Flow
-
-1. Navigate to `/register` and create account
-2. Verify email confirmation requirement
-3. Navigate to `/login` and sign in
-4. Verify redirect to `/` (home page)
-5. Check localStorage for `better-auth.*` keys
-
-#### Testing Matching Flow
-
-1. Login as two users (use incognito windows)
-2. Both click "Match" on matching page
-3. Select same topic and difficulty
-4. First to accept → both redirected to `/collab`
-5. Check editor and chat are synced
-
-#### Testing Collaboration
-
-1. Complete matching flow (above)
-2. Edit code in editor → verify both see changes in real-time
-3. Type in chat → verify message appears for both users
-4. Disconnect one user → verify error state on other user
-
-### Performance Optimization Tips
-
-- **Code Splitting**: Routes lazy-loaded via React Router
-- **Bundle Analysis**: Run `npm run build` and check `dist/` size
-- **WebSocket Optimization**: Yjs automatically compresses deltas over WebSocket
-- **State Updates**: Use `useCallback` to prevent unnecessary re-renders (see [`Editor.tsx`](src/components/collab/Editor.tsx))

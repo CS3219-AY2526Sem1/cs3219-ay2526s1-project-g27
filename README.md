@@ -1,6 +1,6 @@
 # CS3219 Project: PeerPrep
 
-A comprehensive overview of PeerPrep, a real-time peer programming interview preparation platform where users can match with peers, collaborate on coding problems, and chat in real-time. This document covers the containerization strategy and deployment architecture of PeerPrep specifically in terms of Docker-based microservice architecture, container configurations, and deployment patterns.
+A comprehensive overview of PeerPrep, a real-time peer programming interview preparation platform where users can match with peers, collaborate on coding problems, and chat in real-time. This document covers the containerization strategy and deployment architecture of PeerPrep specifically in terms of Docker-based microservice architecture, container configurations, and deployment patterns. `master` is the working production branch and `dev` is the development branch.
 
 ## Table of Contents
 
@@ -42,25 +42,8 @@ docker-compose down -v
 ```
 
 The application will be available at:
-- **Frontend**: `http://localhost:5173` (direct access) or `http://localhost:80` (through nginx)
-- **Nginx Gateway**: `http://localhost:80`
-- **API Base**: `/api` (proxied through nginx)
-
-### Running Specific Services
-
-```bash
-# Start only the frontend and nginx gateway
-docker-compose up frontend react-app
-
-# Start backend services without frontend
-docker-compose up auth-service question-service matching-service collab-service chat-service
-
-# Restart a specific service
-docker-compose restart auth-service
-
-# View logs for a specific service
-docker-compose logs -f auth-service
-```
+- **Frontend**: `http://localhost:80` or `http://localhost` (through nginx)
+- **API Base**: `/api/` (proxied through nginx)
 
 ## Architecture Overview
 
@@ -68,7 +51,7 @@ docker-compose logs -f auth-service
 
 PeerPrep is built as a collection of containerized microservices communicating through a central nginx gateway:
 
-[INSERT IMAGE HERE]
+![Overall Architecture Diagram](./images/overall_architecture_diagram.png)
 
 ### Container Architecture
 
@@ -82,8 +65,8 @@ PeerPrep is built as a collection of containerized microservices communicating t
 - `./auth-service`, `./frontend`, etc.: Development source code
 
 **Service Interdependencies**:
-- Nginx depends on: Auth Service, Question Service
-- Auth Service depends on: MongoDB
+- Nginx depends on: User-Auth Service, Question Service
+- User-Auth Service depends on: MongoDB
 - Question Service depends on: MongoDB
 - Matching Service depends on: Redis
 - Collab Service depends on: MongoDB, Redis
@@ -124,6 +107,9 @@ Stage 2: Nginx server (nginx:alpine)
   └─ Runs nginx with custom configuration
 ```
 
+**Related Files**: 
+- [`./nginx-gateway/README.md`](./nginx-gateway/README.md)
+
 **Configuration Highlights**:
 - SPA fallback: All unknown routes redirect to `/index.html`
 - Cache control: HTML files cached with `no-cache` directive
@@ -137,7 +123,7 @@ Stage 2: Nginx server (nginx:alpine)
 
 ---
 
-### 2. Auth Service Container
+### 2. User-Auth Service Container
 
 **Purpose**: JWT-based authentication and user management
 
@@ -157,14 +143,6 @@ FRONTEND_URL=http://localhost:80
 ```
 
 **Base Technology**: Express.js + Better Auth + Mongoose
-
-**Key Endpoints**:
-- `POST /api/auth/sign-up` - User registration
-- `POST /api/auth/sign-in` - JWT login
-- `GET /api/auth/jwks` - JWKS endpoint (used by nginx for JWT verification)
-- `POST /api/jwt/verify-jwt` - Token verification endpoint
-- `GET /api/users/{userId}/profile` - User profile retrieval
-- `PUT /api/users/{userId}/profile` - Update user profile
 
 **Dockerfile Strategy**: Development-optimized
 ```dockerfile
@@ -211,12 +189,6 @@ DB_LOCAL_URI=mongodb://mongo:27017
 
 **Base Technology**: Express.js + Mongoose
 
-**Key Endpoints**:
-- `GET /question/random` - Fetch random coding problem
-- `POST /question` - Create new question
-- `GET /question/:id` - Get question by ID
-- `GET /question/attempt/{userId}` - Get user's question attempts
-- `POST /question/attempt` - Log question attempt
 
 **Dockerfile Strategy**: Standard development setup
 ```dockerfile
@@ -262,13 +234,6 @@ JWT_SECRET=[secret]
 ```
 
 **Base Technology**: Express.js + BullMQ (job queue) + Redis
-
-**Key Endpoints**:
-- `POST /queue` - Join matching queue
-- `DELETE /queue/:userId` - Leave queue
-- `PUT /matches` - Accept match
-- `GET /queue-events/:userId` - SSE stream for match notifications
-- `HEAD /queue-events/:userId` - Check existence of user-specific event stream
 
 **Dockerfile Strategy**: Production-optimized with non-root user
 ```dockerfile
@@ -505,7 +470,15 @@ command: redis-server --appendonly no --save ""
 
 ## API Documentation
 
-[PENDING]
+Detailed API documentation can be found in each of the microservices' README files, tagged below. 
+
+- [`./auth-service/README.md`](./auth-service/README.md)
+- [`./chat/README.md`](./chat/README.md)
+- [`./collab/server/README.md`](./collab/server/README.md)
+- [`./frontend/README.md`](./frontend/README.md)
+- [`./matching-service/README.md`](./matching-service/README.md)
+- [`./nginx-gateway/README.md`](./nginx-gateway/README.md)
+- [`./question-service/README.md`](./question-service/README.md)
 
 ---
 
@@ -702,7 +675,7 @@ AUTH_SERVICE_TARGET=http://auth-service:8000
 ports:
   - "80:80"      # Host:Container
   - "5173:5173"  # Only frontend exposed for dev
-  - "8000:8000"  # Auth service for debugging
+  - "8000:8000"  # User-Auth service for debugging
 ```
 
 **Why not use default bridge?**
@@ -908,7 +881,4 @@ PeerPrep's containerized microservices architecture provides:
 3. **Developer Experience**: Easy debugging, single command startup
 5. **Real-Time Features**: WebSocket infrastructure for collaboration and chat
 
-The combination of Docker for development and Kubernetes for production ensures consistency across environments while maintaining the flexibility to scale individual components based on demand.
-
-For additional guidance, see:
-
+The use of Docker for development ensures consistency across environments.
