@@ -171,7 +171,16 @@ Base URL: `http://localhost:3013/question`
   Difficulty: enum: ["easy", "medium", "hard"],
 ```
 
-# Setup and usage
-
 ## Run as part of PeerPrep
 To run as part of PeerPrep, simply start PeerPrep using `docker compose up --build` at the root of the project, question service will automatically be launched and seeded.
+
+## Technical choices
+# Database : MongoDB
+MongoDB was chosen because of its flexible schema (Document-Oriented) which makes it easy to evolve data model. This is ideal for agile and rapidly changing applications.
+Furthermore, all data models in question service is simple, there is no need for complex relationships or joins.
+
+# Integration with other services :
+Question service integrates with other services by exposing CRUD endpoints for question and attempt history. REST API is used for these endpoints as it is standardized and easy for both frontend and backend developers to understand and implement, without needing custom protocols or tools. It also takes a lot of load off the server due to its stateless and caching nature.
+
+## Edge case : No question found
+On the GET /question/random endpoint, if the user selects a difficulty and topic combination that doesn't exist in the question database, they will be prompted to select another option when trying to join the matching queue
