@@ -69,17 +69,13 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       }
 
       if (data?.token) {
-        console.log('✅ JWT token obtained successfully');
-        console.log('🔑 Token prefix:', data.token.substring(0, 20) + '...');
         setJwt(data.token);
         setAuthToken(data.token);
       } else {
-        console.warn('❌ No token in response');
         setJwt(null);
         setAuthToken(null);
       }
     } catch (error) {
-      console.error('❌ Error fetching JWT token:', error);
       setJwt(null);
       setAuthToken(null);
     }
