@@ -1,3 +1,14 @@
+/*
+AI Assistance Disclosure:
+Tool: Gemini 2.5 Flash date: 2025-10-12 18:00
+Scope: 
+- Advise on how I should be refactoring code in server.js to other files for readability and maintainability.
+- Advise on how to check if the connection of redis is ready
+Author review: 
+- Followed recommended file structure and refactor code
+- Followed the test code provided
+*/
+
 require('dotenv').config();
 const IORedis = require('ioredis');
 

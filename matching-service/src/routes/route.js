@@ -1,3 +1,16 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT 5  Flash date: 2025-9-28 22:00
+Tool: Gemini 2.5 Flash date: 2025-10-12 18:00
+Tool: ChatGPT 5 date: 2025-10-30
+Scope: 
+- Advise on how implementation of Server Side Events should work.
+- Solving bug on user being able to match himself.
+Author review: 
+- Followed recommended logic flow sketch provided.
+- Followed debugging solution, tested and works.
+*/
+
 const axios = require("axios");
 const express = require("express");
 const matchingRouter = express.Router();
@@ -100,9 +113,10 @@ matchingRouter.get("/queue-events/:userId", async (req, res) => {
     }
 });
 
-matchingRouter.post("/matches", async(req, res) => {
+matchingRouter.put("/matches/:matchId", async(req, res) => {
     try {
-        const { userId, matchId } = req.body;
+        const { matchId } = req.params;
+        const { userId } = req.body;
         const isMatchExpired = await redisDB.exists(matchId) < 1 ? true : false;
         
         if (isMatchExpired) {

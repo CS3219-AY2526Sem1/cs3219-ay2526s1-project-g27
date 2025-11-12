@@ -334,3 +334,37 @@ Create a profile page that allows us to communicate with user-service endpoint d
 Modified to ensure correct endpoint usages
 
 
+
+# Date / Time
+7-11-2025  to 9-11-2025
+# Tool:
+Gemini Pro 2.5 and Claude Sonnet 4.5
+
+# Prompt / Command / Description:
+Given the nginx config and docker-compose, write me the kubernetes config files for those. We specifically use a leetcode collab, so we need sticky session for matching / collab service since they are using web sockets and like stateful sets for any relevant data apps
+
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+
+# Author Notes:
+Modified to use own files, changed some settings like memory etc
+
+
+# Date / Time
+9-11-2025
+# Tool:
+Gemini Pro 2.5 and Claude Sonnet 4.5
+
+# Prompt / Command / Description:
+Change the API endpoints based on the DB schema change myself
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+
+# Author Notes:
+Modified to use own DB and types.

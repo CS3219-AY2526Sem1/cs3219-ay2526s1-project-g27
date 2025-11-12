@@ -16,7 +16,6 @@ const AppRouter: FC = () => {
       {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      {/* <Route path="/features" element={<Features />} /> */}
 
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
@@ -24,6 +23,7 @@ const AppRouter: FC = () => {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/match" element={<MatchingPage />} />
         <Route path="/collab" element={<CollaborationPage/>} />
+        <Route path="/chat" />
       </Route>
       
       {/* 404 Handler */}

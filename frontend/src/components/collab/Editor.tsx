@@ -14,8 +14,6 @@ Author review:
 - Verfied for correctness by running code
 */
 
-// im trying to allow the user to disconnect and reconnect. During the disconnect, the user must not be able to edit the document
-
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import React, { useState, useEffect, useRef } from 'react';
@@ -30,6 +28,13 @@ import { defaultKeymap } from '@codemirror/commands';
 import * as random from 'lib0/random';
 import { Compartment } from '@codemirror/state';
 import { useAuth } from '@/context/AuthContext';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const WEBSOCKET_ENDPOINT = `ws://localhost/api/collab/room`;
 
@@ -49,11 +54,9 @@ export const userColour = USERCOLOURS[random.uint32() % USERCOLOURS.length]
 
 interface CollaborativeEditorProps {
   matchToken: string;
-  language: "python3" | "cpp" | "javascript";
-  // Add user JWT auth token later
 }
 
-export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchToken, language })  => {
+export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchToken })  => {
   const editorRef = useRef<HTMLDivElement>(null);
   const ydocRef = useRef<Y.Doc>(null);
   const providerRef = useRef<WebsocketProvider>(null);
@@ -61,7 +64,8 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
   const editableCompartment = useRef(new Compartment());
   const [ matchState, setMatchState ] = useState<boolean>(true);
   const [ partnerState, setPartnerState ] = useState<boolean>(true);
-  const [ partnerLiveliness, setPartnerLiveliness] = useState<boolean>(true);
+  const [ partnerLiveliness, setPartnerLiveliness ] = useState<boolean>(true);
+  const [ language, setLanguage ] = useState<"python3" | "cpp" | "javascript">("javascript");
 
   const { user, jwt }= useAuth();
 
@@ -89,14 +93,18 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
       }, TIMEOUT_DELAY);
     }
   };
+  const handleLanguageChange = (value: "python3" | "cpp" | "javascript") => {
+    setLanguage(value);
+  };
 
   useEffect(() => { 
     if (!user || !jwt) {
       console.log("No Auth token");
       return;
     }
-    //Handle language change
-    var languageLintExtension = javascript;
+
+    {/* Language Linting */}
+    let languageLintExtension = javascript;
     switch(language) {
       case "python3": {
         languageLintExtension = python;
@@ -114,12 +122,10 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
         languageLintExtension = javascript;
       }
     }
-
-    
     
     const ydoc = new Y.Doc();
-    console.log(`Connecting to ${WEBSOCKET_ENDPOINT}/${matchToken}?userId=${user.id}?token:${jwt}`)
-    console.log(`token: ${jwt}`)
+    // console.log(`Connecting to ${WEBSOCKET_ENDPOINT}/${matchToken}?userId=${user.id}?token:${jwt}`)
+    // console.log(`token: ${jwt}`)
     const provider = new WebsocketProvider(WEBSOCKET_ENDPOINT, matchToken, ydoc, {params: {userId: user.id || 'Anonymous ' + Math.floor(Math.random() * 100), token: jwt}});
     
     provider.ws?.addEventListener('close', event => {
@@ -167,8 +173,6 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
         }
       }
     });
-
-
     
     provider.on('status', (event) => {
       handleWebsocketStatusChange(event.status);
@@ -223,15 +227,85 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchT
       });
     }
   }, [connectionStatus, matchState]);
+
+  {/* Status Logic */}
+  let myStatusColor = 'bg-gray-400';
+  let myStatusText = 'Unknown';
+  switch (connectionStatus) {
+    case 'connected':
+      myStatusColor = 'bg-green-600';
+      myStatusText = 'Connected';
+      break;
+    case 'shortDisconnect':
+      myStatusColor = 'bg-yellow-600';
+      myStatusText = 'Reconnecting...';
+      break;
+    case 'disconnected':
+      myStatusColor = 'bg-red-600';
+      myStatusText = 'Disconnected';
+      break;
+  }
+
+  let partnerStatusColor = 'bg-gray-400';
+  let partnerStatusText = 'Unknown';
+  if (!matchState) {
+    partnerStatusColor = 'bg-red-700';
+    partnerStatusText = 'Match Does Not Exist';
+  } else if (!partnerState) {
+    partnerStatusColor = 'bg-red-600';
+    partnerStatusText = 'Left Page';
+  } else if (partnerState && !partnerLiveliness) {
+    partnerStatusColor = 'bg-yellow-600';
+    partnerStatusText = 'AFK';
+  } else if (partnerState && partnerLiveliness) {
+    partnerStatusColor = 'bg-green-600';
+    partnerStatusText = 'Active';
+  }
   
   return (
-    <>
-      {!partnerLiveliness && partnerState && <div> Partner AFK</div>}
-      {!partnerState && <div> Partner left</div>}
-      {!matchState && <div> Match Does not exist </div> }
-      {connectionStatus === "shortDisconnect" && <div>'Connecting...'</div>}
-      {connectionStatus === "disconnected" && <div>'Disconnected'</div>}
-      <div ref={editorRef} style={{ border: '1px solid #ccc', height: '400px' }} />
-    </>
+    <div className="w-full">
+      {/* Header section with controls and status */}
+      <div className="flex justify-between items-start mb-2">
+
+        {/* Left Side: Language Selector */}
+        <div className="flex-end gap-2">
+          <label
+            htmlFor="language-select"
+            className="text-sm font-medium text-gray-700"
+          >
+            Language
+          </label>
+          <Select value={language} onValueChange={handleLanguageChange}>
+            <SelectTrigger id="language-select" className="w-[180px]">
+              <SelectValue placeholder="Select language" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              <SelectItem value="python3">Python 3</SelectItem>
+              <SelectItem value="cpp">C++</SelectItem>
+              <SelectItem value="javascript">Javascript</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Right Side: Status Messages */}
+        <div className="text-right text-sm space-y-1.5">
+          {/* My Status Row */}
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-sm font-medium text-gray-700">You:</span>
+            <span className={`w-3 h-3 rounded-full ${myStatusColor}`}></span>
+            <span className="text-sm text-gray-900">({myStatusText})</span>
+          </div>
+          {/* Partner Status Row */}
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-sm font-medium text-gray-700">Partner:</span>
+            <span className={`w-3 h-3 rounded-full ${partnerStatusColor}`}></span>
+            <span className="text-sm text-gray-900">({partnerStatusText})</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Editor */}
+      <div ref={editorRef} className="border border-[#ccc] h-[400px] rounded-md"/>
+    </div>
   )
 };

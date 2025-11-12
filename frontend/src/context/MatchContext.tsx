@@ -1,8 +1,20 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT 5 date: 2025-10-13 12:30
+Tool: ChatGPT 5 / Claude Sonnet 4.5 / Gemini 2.5 Flash  date: 2025-10-26/27
+Scope: 
+- Ensure Match Persistence state across the entire application
+- Synchronization of multiple tabs of the same browser to show the same matching page to resolve bug 
+that opening another tab allows user to enter the queue.
+Author review: 
+- Followed the guideline of how the original matching page logic should be separated with an overarching context.
+- Verfied for correctness by testing
+*/
+
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import apiClient from "@/api/apiClient";        
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import axios, { AxiosError } from "axios";
 
 interface MatchingContextType {
     isMatching: boolean;
@@ -513,24 +525,27 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
         }
 
         // check if question exists
-        try {
-            await axios.post("http://localhost:3013/question/random", { 
-                categories: [topic], 
-                difficulty: difficulty 
-                }); 
-        } catch (error) {
-            let errorMsg;
-            if (error instanceof AxiosError && error.status === 404) {
-                errorMsg = 'No questions available for the selected topic and difficulty';
-            } else {
-                errorMsg = 'Error caught while checking question exists';
-            }
-            console.error("error checking if question exists", error);
-            setErrorMessage(errorMsg);
-            setShowError(true);
-            syncStateToStorage({ showError: true, errorMessage: errorMsg });
-            return;
-        }
+        let questionExists = true;
+        await apiClient.post(`/questions/question/random`, { 
+            categories: [topic], 
+            difficulty: difficulty 
+            })
+            .then(() => {
+            })
+            .catch(error => {
+                let errorMsg = "apiClient post error caught while checking question exists";
+                if (error.response?.status === 404) {
+                    errorMsg = 'No question found for the selected topic and difficulty';
+                    console.log(errorMsg);
+                }
+                questionExists = false;
+                setErrorMessage(errorMsg);
+                setShowError(true);
+                syncStateToStorage({ showError: true, errorMessage: errorMsg });
+            });
+        if (!questionExists) return;
+            
+
 
         const stored = getStoredState();
         if (stored.isMatching && stored.userId === userId) {
@@ -581,7 +596,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
     const acceptMatch = () => {
         if (!userId || !matchId) return;
 
-        apiClient.post(`/matching/matches`, { userId, matchId })
+        apiClient.put(`/matching/matches/${matchId}`, { userId })
             .then(() => {
                 console.log('Match accepted');
             })
