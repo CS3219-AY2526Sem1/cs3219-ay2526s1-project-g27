@@ -58,13 +58,11 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      console.log('🔑 Fetching JWT token using authClient.token()...');
       
-      // CORRECT WAY: Use the token() method from jwtClient plugin
       const { data, error } = await authClient.token();
       
       if (error) {
-        console.error('❌ Error fetching JWT token:', error);
+        console.error('Error fetching JWT token:', error);
         setJwt(null);
         setAuthToken(null);
         return;

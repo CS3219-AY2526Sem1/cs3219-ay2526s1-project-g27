@@ -11,7 +11,6 @@
 3. GET /api/v1/users/:id/profile -> Get a user's specific profile details
 4. POST /api/v1/users/:id/profile -> Create a user's specific profile details
 5. PUT /api/v1/users/:id/profile -> Update a user's specific profile details
-6. DELETE /api/v1/users/:id/profile -> Delete a user's specific profile details
 
 
 
