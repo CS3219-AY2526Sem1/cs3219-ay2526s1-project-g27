@@ -74,20 +74,19 @@ export default function RegisterForm() {
     setIsLoading(true);
     try {
       const { email, password, username } = values;
-
+      form.clearErrors("root"); // Clear previous root errors
       const { error } = await signup({ email, password, name: username });
 
       if (error) {
-        toast.error(`Sign-up failed: ${error.message}`);
+        form.setError("root", { message: `Sign-up failed: ${error.message}` });
       } else {
-        toast.success(
-          "Sign-up successful! Please check your email (outside of Outlook) to verify your account."
-        );
         setIsSuccess(true);
-      } 
+      }
     } catch (err) {
       console.error("An unexpected error occurred:", err);
-      toast.error("An unexpected error occurred. Please try again.");
+      form.setError("root", {
+        message: "An unexpected error occurred. Please try again.",
+      });
     } finally {
       setIsLoading(false); // Re-enable the form
     }

@@ -50,6 +50,7 @@ export default function LoginForm() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    form.clearErrors("root"); // Clear previous root errors
     const result = await login(values);
     if (result.error) {
       const errorMessage = (result.error.message === "Invalid email or password"
