@@ -1,8 +1,18 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT 5 date: 2025-9-29 15:30
+Tool: Gemini 2.5 Flash date: 2025-10-12 18:00
+Scope: 
+- Recommended flow of logic when users accept match
+Author review: 
+- Followed recommended logic flow and functions provided for their respective responsibility
+*/
 
 const { redisDB } = require('../config/redis');
 const { handleDisconnect } = require('../sse/disconnectHandler');
 const { SSEClientConnections } = require('../sse/SSEClientConnection');
 const jwt = require("jsonwebtoken");
+const axios = require("axios");
 require('dotenv').config();
 
 const requeueUser = async(userData) => {
@@ -28,10 +38,10 @@ const requeueUser = async(userData) => {
     connection.updateJobId(job.id);
 }
 
-const handleServerError = (userData) => {
+const handleServerError = async(userData) => {
     const { userId, matchingQueue, connection } = userData;
     connection.send("serverError", { message: "Internal Server Error." });
-    handleDisconnect(userId, matchingQueue);
+    await handleDisconnect(userId, matchingQueue);
     connection.close();
 }
 
@@ -44,7 +54,7 @@ const checkMatchTimeout = async(matchId, matchingQueue) => {
             if (SSEClientConnection) {
                 if (allFields[field] === "false") {
                     SSEClientConnection.send("matchFailed", { message: "Did not accept match within time limit, please try again!" });
-                    handleDisconnect(userId, matchingQueue);
+                    await handleDisconnect(userId, matchingQueue);
                     SSEClientConnection.close();
                 } else {
                     const userData = {
@@ -128,23 +138,56 @@ const handleTentativeMatch = async(jobData, matchingQueue) => {
     }
 }
 
-const finalizeMatch = async(matchId, data, matchingQueue) => {
-    console.log('data in finalize match', data, data.userA, data.userB);
+const finalizeMatch = async(matchId, data, matchingQueue, topic, difficulty) => {
+    console.log('data in finalize match', data, data.userA, data.userB, matchingQueue, topic, difficulty);
+    // call question service to get question here
+    let question;
+    try {
+     const response = await axios.post("http://question-service:3013/question/random/", {
+        categories: [topic],
+        difficulty,
+        });
+       question = response.data;
+    } catch (error) {
+        console.error("Error fetching question from question service:", error);
+        throw error;
+    }
+    console.log('Question retrieved', question);
     const SSEClientAConnection = SSEClientConnections.get(data.userA);
     const SSEClientBConnection = SSEClientConnections.get(data.userB);
     const signedData = jwt.sign(data, process.env.JWT_SECRET);
     console.log('signed data', signedData);
     if (SSEClientAConnection) {
-        SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData });
-        handleDisconnect(data.userA, matchingQueue);
+        SSEClientAConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData, question });
+        await handleDisconnect(data.userA, matchingQueue);
         SSEClientAConnection.close();
     }
     if (SSEClientBConnection) {
-        SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData });
-        handleDisconnect(data.userB, matchingQueue);
+        SSEClientBConnection.send("matchSuccess", { message: "Redirecting to collaboration space...", ...data, signedData, question });
+        await handleDisconnect(data.userB, matchingQueue);
         SSEClientBConnection.close();
     }
     await redisDB.del(matchId);
+    const MATCH_START_ENDPOINT = process.env.COLLAB_URL + `/match/start/${signedData}`;
+    axios.post(MATCH_START_ENDPOINT).catch((error) => {
+        console.log(error);
+    });;
+    console.log(`Posted match start request to ${MATCH_START_ENDPOINT}`)    
+    
+    // record question attempt for both users
+    try {
+     const response = await axios.post("http://question-service:3013/question/attempt", {
+            UserId1: data.userA,
+            UserId2: data.userB,
+            question: question
+        });
+
+       console.log('Question attempt recorded', response);
+    } catch (error) {
+        console.error("Error recording question attempt:", error);
+        throw error;
+    }
+
     const isMatchDeleted = await redisDB.exists(matchId) < 1 ? true : false;
     console.log('is delete successful', isMatchDeleted);
 }

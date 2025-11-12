@@ -1,11 +1,22 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5) date: 2025-9-23
+Scope: 
+- translate natural language instructions into code
+Author review: 
+- I validated correctness, and tested it manually by checking if the database is seeded correctly when empty.
+*/
+
+
 import questionModel from "../model/question-model.js";
 
 export async function seedTestQuestions() {
   const count = await questionModel.countDocuments();
-  if (count > 0) return; // DB already seeded
+  if (count > 0) return;
 
-  console.log("DB is empty. Seeding test questions...");
+  console.log("DB is empty. Seeding test questions");
 
+  // AI‑generated (edited by Kok Seng)
   const questions = [
     {
       questionId: 1,

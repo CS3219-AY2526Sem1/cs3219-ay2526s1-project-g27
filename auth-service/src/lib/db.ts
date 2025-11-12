@@ -1,5 +1,15 @@
+/*
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# - Template code, iterated on it 
+# Author review: 
+# - Verify through running 
+# - Code inspection and changes as needed 
+# */
+
 import { MongoClient, Db, Collection } from "mongodb";
-import { UserProfile } from "../models/Profile";
+import { UserProfile, UserAuth } from "../models/Profile";
 
 let client: MongoClient;
 let db: Db; 
@@ -50,6 +60,9 @@ export function getDatabase(): Db {
 
 export function getProfileCollection(): Collection<UserProfile> {
   return getDatabase().collection<UserProfile>("profiles");
+}
+export function getUserCollection(): Collection<UserAuth> {
+  return getDatabase().collection<UserAuth>("user");
 }
 
 export async function closeDatabase(): Promise<void> {

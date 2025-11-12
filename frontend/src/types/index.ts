@@ -4,6 +4,32 @@ export interface User {
   username?: string; // username is optional
 }
 
+export interface SolvedProblem {
+  problemId: string;
+  solvedAt: string;
+  language: string;
+}
+
+
+export interface UserProfile {
+  _id: string;
+  userId: string;
+  username?: string;
+  handles: string[];
+  problemsSolved: SolvedProblem[];
+  biography: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+
+export type UpdateProfilePayload = {
+  username?: string;
+  biography?: string;
+  handles?: string[];
+  problemsSolved?: SolvedProblem[];
+};
+
 export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;

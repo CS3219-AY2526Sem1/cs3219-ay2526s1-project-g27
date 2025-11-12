@@ -1,6 +1,16 @@
+/*
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# -  Create template routes 
+# Author review: 
+# - Verify through running 
+# - Read the code 
+# */
+
 import { Router } from "express";
-import { ProfileController } from "../controller/profileController";
-import { requireAuth, requireOwnership, optionalAuth } from "../middleware/authMiddleware";
+import { ProfileController } from "../controller/ProfileController";
+import { requireAuth, requireOwnership, optionalAuth } from "../middleware/AuthMiddleware";
 
 const userRouter = Router();
 
@@ -18,9 +28,7 @@ userRouter.get("/:id/profile", requireAuth, requireOwnership, ProfileController.
 userRouter.post("/:id/profile", requireAuth, requireOwnership, ProfileController.createProfile);
 
 // PUT /api/v1/users/:id/profile - Update user profile (protected)
-userRouter.put("/:id/profile", requireAuth, requireOwnership, ProfileController.updateProfile);
+userRouter.put("/:id/profile", requireAuth, requireOwnership, ProfileController.patchProfile);
 
-// DELETE /api/v1/users/:id/profile - Delete user profile (protected)
-// userRouter.delete("/:id/profile", requireAuth, requireOwnership, ProfileController.deleteProfile);
 
 export default userRouter;

@@ -8,11 +8,16 @@ import * as map from 'lib0/map'
 
 import * as eventloop from 'lib0/eventloop'
 
+import url from 'url';
+
 import { callbackHandler, isCallbackSet } from './callback.js'
 import { mongoPersistence } from './persistence.js'
+import { stopMatch } from './server.js'
 
-const CALLBACK_DEBOUNCE_WAIT = parseInt(process.env.CALLBACK_DEBOUNCE_WAIT || '2000')
+const CALLBACK_DEBOUNCE_WAIT = parseInt(process.env.CALLBACK_DEBOUNCE_WAIT || '2000');
 const CALLBACK_DEBOUNCE_MAXWAIT = parseInt(process.env.CALLBACK_DEBOUNCE_MAXWAIT || '10000')
+
+export const ROOM_PREFIX = "room";
 
 const debouncer = eventloop.createDebouncer(CALLBACK_DEBOUNCE_WAIT, CALLBACK_DEBOUNCE_MAXWAIT)
 
@@ -98,6 +103,23 @@ export class WSSharedDoc extends Y.Doc {
      */
     this.awareness = new awarenessProtocol.Awareness(this)
     this.awareness.setLocalState(null)
+    
+    /**
+     * @type {Map<string, Object[]>}
+     */
+    this.userConnsMap = new Map();
+
+    /**
+     * @type {Map<Object, boolean>}
+     */
+    this.connLivelinessMap = new Map();
+    
+
+    /**
+     * @type {Map<Object, NodeJS.Timeout>}
+     */
+    this.connLivelinessIntervals = new Map();
+
     /**
      * @param {{ added: Array<number>, updated: Array<number>, removed: Array<number> }} changes
      * @param {Object | null} conn Origin is the connection that made the change
@@ -160,7 +182,7 @@ const messageListener = (conn, doc, message) => {
     const decoder = decoding.createDecoder(message)
     const messageType = decoding.readVarUint(decoder)
     switch (messageType) {
-      case messageSync:
+      case messageSync: {// User editted something in document
         encoding.writeVarUint(encoder, messageSync)
         syncProtocol.readSyncMessage(decoder, encoder, doc, conn)
 
@@ -170,12 +192,28 @@ const messageListener = (conn, doc, message) => {
         if (encoding.length(encoder) > 1) {
           send(doc, conn, encoding.toUint8Array(encoder))
         }
+        console.log(`Message Received from ${conn} of type ${messageType}`);
+        const userId = getUserByConn(doc, conn);
+        console.log(`Origin: ${userId}`);
+        const isUserAlive = checkUserAlive(doc, userId);
+        doc.connLivelinessMap.set(conn, true);
+        if (!isUserAlive) { //braodcast to partner that user is now alive
+          console.log(`User ${userId} was recently afk`);
+          broadcastMessageToAllOtherUsers(doc, userId, 'partnerAlive');
+        }
+        if (typeof doc.connLivelinessIntervals.get(conn) == "undefined") {
+          console.log(`Creating interval for ${userId}`);
+          initLivelinessInterval(doc, conn, userId);
+        }
         break
+      }
       case messageAwareness: {
         awarenessProtocol.applyAwarenessUpdate(doc.awareness, decoding.readVarUint8Array(decoder), conn)
+        console.log(`Awareness Update Received from ${conn} of type ${messageType}`)
         break
       }
     }
+    
   } catch (err) {
     console.error(err)
     // @ts-ignore
@@ -196,12 +234,35 @@ const closeConn = (doc, conn) => {
     const controlledIds = doc.conns.get(conn)
     doc.conns.delete(conn)
     awarenessProtocol.removeAwarenessStates(doc.awareness, Array.from(controlledIds), null)
-    if (doc.conns.size === 0 && persistence !== null) {
-      // if persisted, we store state and destroy ydocument
-      persistence.writeState(doc.name, doc).then(() => {
-        doc.destroy()
-      })
-      docs.delete(doc.name)
+    console.log(`Closing connection of doc ${doc.name}, Remaining cons: ${doc.conns}`)
+    const userId = getUserByConn(doc, conn);
+    const userConnections =  doc.userConnsMap.get(userId);
+    if (typeof userConnections == 'undefined') {
+      console.log(`Untracked user deleted. User: ${userId}`)
+      return;
+    } else {
+      userConnections.splice(userConnections.indexOf(conn), 1);
+      if (userConnections.length == 0) {
+        doc.userConnsMap.delete(userId);
+      }
+    }
+    console.log(`Closing connection of User:${userId}\nCurrent room state: ${[...doc.userConnsMap.entries()]}`)
+    if (doc.userConnsMap.size == 1) {
+      broadcastMessageToAllOtherUsers(doc, userId, "lastUser")
+    }
+    if (doc.conns.size === 0) {
+      stopMatch(doc.name).catch( (error) => {
+        if (error instanceof URIError) {
+          console.log(`Trying to close invalid room ${doc.name}`);
+        }
+      });
+      if (persistence !== null) {
+        // if persisted, we store state and destroy ydocument
+        persistence.writeState(doc.name, doc).then(() => {
+          doc.destroy()
+        })
+        docs.delete(doc.name)
+      }
     }
   }
   conn.close()
@@ -223,18 +284,139 @@ const send = (doc, conn, m) => {
   }
 }
 
-const pingTimeout = 30000
+const PING_TIMEOUT = 30000
+const LIVELINESS_TIMEOUT = 10000
+
+/**
+ * 
+ * @param {string} pathname
+ * @returns 
+ */
+
+export const extractRoomName = (pathname) => {
+  const extractRoom = new RegExp(`\/${ROOM_PREFIX}\/(.*)`);
+  const match = extractRoom.exec(pathname)
+  console.log(`Extracted Room: ${JSON.stringify(match)}`)
+  if (!match) {
+    console.log(`No matchToken supplied on ${pathname}`)
+    throw new URIError("No Room supplied")
+  }
+  return match[1];
+}
+
+// Starts the Liveliness Interval. 
+// After the interval, the callback will check if any of the user's connection is alive.
+// If all of them have no recent updates, this server will send a 'partnerAfk' event.
+const initLivelinessInterval = (doc, conn, userId) => {
+  doc.connLivelinessIntervals.set(conn, setInterval( () => {
+    if (doc.connLivelinessIntervals.has(conn)) {
+      console.log(`Refreshing liveliness interval for ${userId}`)
+    }
+    console.log(`Liveliness interval triggered for User: ${userId} on conn: ${conn}`);
+    const isUserAlive = checkUserAlive(doc, userId);
+    console.log(`${userId} connMap: ${doc.userConnsMap.get(userId)}`);
+    console.log(`${userId} Liveliness: ${isUserAlive}`)
+    doc.connLivelinessMap.set(conn, false);
+    if (!isUserAlive) {
+      broadcastMessageToAllOtherUsers(doc, userId, 'partnerAfk');
+      clearInterval(doc.connLivelinessIntervals.get(conn));
+      doc.connLivelinessIntervals.delete(conn);
+    }
+  }, LIVELINESS_TIMEOUT));
+}
+
+
+/**
+ * Broadcast to all connections that do not being to the user specified in the argument
+ * @param {WSSharedDoc} doc 
+ * @param {string} userId 
+ * @param {string} message 
+ */
+const broadcastMessageToAllOtherUsers = (doc, userId, message) => {
+  doc.userConnsMap.forEach((connectionList, user) => {
+    if (user !== userId) {
+      connectionList.forEach((c) => {
+        console.log(`Sending ${message} to ${user}`);
+        c.send(message);
+      });
+    }
+  });
+};
+
+const checkUserAlive = (doc, userId) => {
+  return doc.userConnsMap.get(userId)?.reduce( (prev, curr) => {
+    return prev || doc.connLivelinessMap.get(curr);
+  }, false);  
+}
+
+/**
+ * 
+ * @param {*} doc 
+ * @param {*} conn 
+ * @returns 
+ */
+const getUserByConn = (doc, conn) => {
+  let userId = "";
+  doc.userConnsMap.forEach( (cs, u) => {
+    cs.forEach( (c) => {
+      if (c == conn) {
+        userId = u; //guaranteed
+      }
+    });
+  });
+  return userId;
+}
+
 
 /**
  * @param {import('ws').WebSocket} conn
  * @param {import('http').IncomingMessage} req
+ * @param {string} userId
  * @param {any} opts
  */
-export const setupWSConnection = (conn, req, { docName = (req.url || 'a').slice(1).split('?')[0], gc = true } = {}) => {
+export const setupWSConnection = (conn, req, userId, { gc = true } = {}) => {
+  if (!req.url) {
+    conn.close();
+    return;
+  }
+  const { pathname, query } = url.parse(req.url, true);
+  if (!pathname) {
+    console.log(`No room supplied on ${req.url}`)
+    conn.close();
+    return;
+  }
+  let docName = "";
+  try {
+    docName = extractRoomName(pathname)
+    console.log(`Connection attempt to ${docName}`)
+  } catch (error) {
+    if (error instanceof URIError) {
+      console.log(`No room supplied on ${pathname}`)
+      conn.close();
+      return;
+    }
+  }
+
   conn.binaryType = 'arraybuffer'
   // get doc, initialize if it does not exist yet
   const doc = getYDoc(docName, gc)
   doc.conns.set(conn, new Set())
+
+  // Keep track of users and their connections
+  if (!doc.userConnsMap.has(userId)) {
+    broadcastMessageToAllOtherUsers(doc, userId, "partnerRejoin");
+  }
+  const userConnections =  doc.userConnsMap.get(userId);
+  if (typeof userConnections == 'undefined') {
+    doc.userConnsMap.set( userId, [conn]);
+  } else {
+    userConnections.push(conn);
+  }
+  console.log(`Client requested to join with userId ${userId}\nCurrent room status: ${[...doc.userConnsMap.entries()]}`)
+
+  initLivelinessInterval(doc, conn, userId);
+  doc.connLivelinessMap.set(conn, false);
+
   // listen and reply to events
   conn.on('message', /** @param {ArrayBuffer} message */ message => messageListener(conn, doc, new Uint8Array(message)))
 
@@ -255,10 +437,11 @@ export const setupWSConnection = (conn, req, { docName = (req.url || 'a').slice(
         clearInterval(pingInterval)
       }
     }
-  }, pingTimeout)
+  }, PING_TIMEOUT)
   conn.on('close', () => {
     closeConn(doc, conn)
     clearInterval(pingInterval)
+    clearInterval(doc.connLivelinessIntervals.get(conn));
   })
   conn.on('pong', () => {
     pongReceived = true

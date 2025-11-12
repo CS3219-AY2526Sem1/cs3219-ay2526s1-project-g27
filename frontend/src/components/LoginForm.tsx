@@ -1,6 +1,15 @@
-import { useEffect } from "react";
+/*
+AI Assistance Disclosure:
+Tool: Gemini 2.5 Pro date: 2025‑10‑07
+Scope: 
+- Introduced Zod validation schema integration
+Author review: 
+- Rewrote code around the custom requirements of users' particulars
+(e.g. minimum/maximum password length, valid email regex format)
+- Verified by testing code
+*/
+
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,15 +39,7 @@ const formSchema = z.object({
 })
 
 export default function LoginForm() {
-  const { login, isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/", { replace: true }); 
-    }
-  }, [isAuthenticated, navigate]);
-
+  const { login, isLoading } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,10 +50,17 @@ export default function LoginForm() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      await login(values); // login({ email, password })
-    } catch (error) {
-      alert(`Login has failed + ${error}`)
+    form.clearErrors("root"); // Clear previous root errors
+    const result = await login(values);
+    if (result.error) {
+      const errorMessage = (result.error.message === "Invalid email or password"
+        ? result.error.message
+        : result.error.code === "EMAIL_NOT_VERIFIED"
+          ? "Check your email to verify your account."
+          : "An unknown error occured.");
+      form.setError("root", {
+        message: errorMessage,
+      });
     }
   }
   
@@ -76,7 +84,7 @@ export default function LoginForm() {
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-600"/>
               </FormItem>
             )}
           />
@@ -89,7 +97,7 @@ export default function LoginForm() {
                 <div className="flex items-center">
                   <FormLabel>Password</FormLabel>
                   <a
-                    href="#"
+                    href="/forgot-password"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                   >
                     Forgot your password?
@@ -103,10 +111,16 @@ export default function LoginForm() {
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-600"/>
               </FormItem>
             )}
           />
+
+          {form.formState.errors.root && (
+            <FormItem>
+              <FormMessage className="text-red-600">{form.formState.errors.root.message}</FormMessage>
+            </FormItem>
+          )}
 
           <Field>
             <Button type="submit" disabled={isLoading} className="bg-navbar w-full">

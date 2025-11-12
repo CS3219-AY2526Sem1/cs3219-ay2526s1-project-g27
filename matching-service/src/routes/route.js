@@ -1,9 +1,21 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT 5  Flash date: 2025-9-28 22:00 / 2025-10-30 / 2025-11-1
+Tool: Gemini 2.5 Flash date: 2025-10-12 18:00
+Scope: 
+- Advise on how implementation of Server Side Events should work.
+- Solving bug on user being able to match himself.
+Author review: 
+- Followed recommended logic flow sketch provided.
+- Followed debugging solution of creating SSEConnectionLock with API endpoint call, tested and works.
+*/
+
 const axios = require("axios");
 const express = require("express");
 const matchingRouter = express.Router();
 const { matchingQueue } = require('../queue/queueManager');
 const { handleDisconnect } = require('../sse/disconnectHandler');
-const { SSEClientConnections, SSEClientConnection } = require("../sse/SSEClientConnection");
+const { SSEClientConnections, SSEClientConnection, SSEConnectionLocks } = require("../sse/SSEClientConnection");
 const { finalizeMatch } = require('../match/matchHandler');
 const { redisDB } = require("../config/redis");
 
@@ -15,13 +27,14 @@ matchingRouter.post("/queue", async(req, res) => {
         if (!SSEClientConnection) {
             throw new Error();
         }
-        const question = await axios.get("http://question-service:3013/question/random", { categories: [userData.topic], difficulty: userData.topic});
-        console.log('Question retrieved', question);
+        console.log(userData.topic, userData.difficulty)
+        const question = await axios.post("http://question-service:3013/question/random", { categories: [userData.topic], difficulty: userData.difficulty});
         if (!question) {
             SSEClientConnection.send("noQuestion", { message: "No question available for selected category and difficulty. Please make another selection." });
-            handleDisconnect(userData.userId, matchingQueue);
+            await handleDisconnect(userData.userId, matchingQueue);
             SSEClientConnection.close();
         }
+        console.log('Question retrieved successfully!');
         const job = await matchingQueue.add("add-user",
             {
                 userId: userData.userId,
@@ -48,31 +61,61 @@ matchingRouter.post("/queue", async(req, res) => {
     }
 });
 
-matchingRouter.get("/queue-events/:userId", (req, res) => {
+matchingRouter.head("/queue-events/:userId", async (req, res) => {
     const { userId } = req.params;
-    console.log(`User ${userId} listening to server!`);
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-    res.flushHeaders();
+    // 1️⃣ If already connected
+    if (SSEClientConnections.has(userId)) {
+        console.log(`❌ Duplicate SSE connection for user ${userId}`);
+        return res.status(409).json({ error: "User already connected on another browser or tab." });
+    }
 
-    // send dummy data to trigger Firefox .onopen
-    res.write(`: connected\n\n`);
+    // 2️⃣ If locked / in progress
+    if (SSEConnectionLocks.has(userId)) {
+        return res.status(429).json({ error: "Connection attempt in progress. Try again." });
+    }
 
-    // save the response object so we can push events later
-    SSEClientConnections.set(userId, new SSEClientConnection(res, Date.now()));
-
-    // clean up on disconnect
-    req.on("close", async() => {
-        console.log(`Client disconnected: ${userId}`);
-        handleDisconnect(userId, matchingQueue);
-    });
+    // 3️⃣ OK to connect
+    res.status(200).end();
 });
 
-matchingRouter.post("/matches", async(req, res) => {
+matchingRouter.get("/queue-events/:userId", async (req, res) => {
+    const { userId } = req.params;
+    console.log(`User ${userId} attempting to connect...`);
+
+    // Lock the user during connection setup
+    SSEConnectionLocks.add(userId);
+
     try {
-        const { userId, matchId } = req.body;
+        // Proceed to establish SSE
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        res.flushHeaders();
+
+        res.write(`: connected\n\n`);
+        SSEClientConnections.set(userId, new SSEClientConnection(res, Date.now()));
+        console.log(`✅ SSE connection established for user ${userId}`);
+
+        req.on("close", async () => {
+            console.log(`Client disconnected: ${userId}`);
+            await handleDisconnect(userId, matchingQueue);
+            SSEClientConnections.delete(userId);
+            SSEConnectionLocks.delete(userId);
+        });
+    } catch (err) {
+        console.error(`Error while connecting user ${userId}:`, err);
+        res.status(500).json({ error: "Internal error setting up SSE connection" });
+    } finally {
+        // Always remove lock even on failure
+        SSEConnectionLocks.delete(userId);
+    }
+});
+
+matchingRouter.put("/matches/:matchId", async(req, res) => {
+    try {
+        const { matchId } = req.params;
+        const { userId } = req.body;
         const isMatchExpired = await redisDB.exists(matchId) < 1 ? true : false;
         
         if (isMatchExpired) {
@@ -86,6 +129,7 @@ matchingRouter.post("/matches", async(req, res) => {
         await redisDB.hset(matchId, `accepted:${userId}`, "true");
         
         const allFields = await redisDB.hgetall(matchId);
+        console.log('allFields in /matches route', allFields);
         let matchAccepted = true;
         for (const field in allFields) {
             if (field.startsWith("accepted:")) {
@@ -104,7 +148,7 @@ matchingRouter.post("/matches", async(req, res) => {
                 userB: userB,
                 time: Date.now()
             }
-            await finalizeMatch(matchId, data, matchingQueue);
+            await finalizeMatch(matchId, data, matchingQueue, allFields.topic, allFields.difficulty);
             return res.status(200).json({ message: "Redirecting to collaboration space..." });
         } else {
             return res.status(200).json({ message: "Waiting for other user to accept..." });
@@ -121,7 +165,7 @@ matchingRouter.delete("/queue/:userId", async(req, res) => {
         // to check if server side events is tracked by server
         const SSEClientConnection = SSEClientConnections.get(userId);
         if (SSEClientConnection) {
-            handleDisconnect(userId, matchingQueue);
+            await handleDisconnect(userId, matchingQueue);
             SSEClientConnection.close();
         }
         return res.status(200).json({ message: "User successfully removed from queue" });

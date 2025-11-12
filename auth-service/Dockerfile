@@ -1,32 +1,29 @@
-# Stage 1: The Builder
-# This stage installs all dependencies, including devDeps, to build the project
-FROM node:22-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-# Compile TypeScript to JavaScript, placing it in the /dist folder
-RUN npm run build
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# - Boiler Docker file 
+# Author review: 
+# - Verify through running 
+# - Read the code 
 
-# Stage 2: The Final Production Image
-# Start from a fresh, clean base image
+
+# Use the official Node.js image as a base
 FROM node:22-alpine
+
+# Set the working directory inside the container
 WORKDIR /app
 
-# Set the environment to production
-ENV NODE_ENV=production
-
-# Copy package files
+# Copy package files to leverage Docker's build cache
 COPY package*.json ./
 
-# Install ONLY production dependencies to keep the image small
-RUN npm install --only=production
+# Install all dependencies, including devDependencies like nodemon and ts-node
+RUN npm install
 
-# Copy the compiled JavaScript code from the 'builder' stage
-COPY --from=builder /app/dist ./dist
+# Copy the rest of the application's source code
+COPY . .
 
-# Expose the port
+# Expose the port the app runs on
 EXPOSE 8000
 
-# The command to start the server, running the compiled JavaScript
-CMD ["npm", "start"]
+# The command to start the development server
+CMD ["npm", "run", "dev"]

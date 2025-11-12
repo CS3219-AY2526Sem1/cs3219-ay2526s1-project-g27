@@ -1,3 +1,13 @@
+/*
+AI Assistance Disclosure:
+Tool: Gemini 2.5 Pro date: 2025‑10‑07
+Scope: 
+- Generated initial UI
+Author review: 
+- Modified code to use correct styling
+- Verified by testing code
+*/
+
 import { NavLink } from "react-router-dom";
 import { useAuth } from '@/context/AuthContext';
 import QueueTimerDisplay from "../QueueTimerDisplay";
@@ -21,7 +31,7 @@ export default function NavBar() {
 
   return (
     <>
-      <header className="sticky top-0 w-full border-b border-gray-200 bg-navbar">
+      <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-navbar">
         <div className="container mx-auto flex h-auto items-center justify-between px-4">
           {/* Left: Logo / Header */}
           <div className="flex items-center text-2xl sm:text-3xl lg:text-4xl sm:p-2 md:p-4">

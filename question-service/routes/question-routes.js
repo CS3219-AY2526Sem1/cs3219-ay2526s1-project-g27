@@ -1,5 +1,4 @@
 import express from "express";
-
 import {
   getRandomQuestion,
   createNewQuestion,
@@ -8,28 +7,25 @@ import {
   findQuestionById,
   getAllQuestions,
 } from "../controller/question-controller.js";
-
 import {
   findUserAttempts,
   addUserAttempt,
+  getAllAttempts,
+  deleteAllAttempts,
 } from "../controller/question-attempt-controller.js";
 
 const router = express.Router();
 
-router.get("/random", getRandomQuestion);
-
+router.post("/random", getRandomQuestion);
 router.get("/all", getAllQuestions);
+router.get("/attempt/:UserId", findUserAttempts);
+router.post("/attempt", addUserAttempt);
+router.get("/attempt/all", getAllAttempts);
+router.delete("/attempt/all", deleteAllAttempts);
 
 router.post("/", createNewQuestion);
-
-router.delete("/:id", deleteQuestion);
-
 router.put("/:id", updateQuestion);
-
+router.delete("/:id", deleteQuestion);
 router.get("/:id", findQuestionById);
-
-router.get("/attempt/:username", findUserAttempts);
-
-router.post("/attempt", addUserAttempt);
 
 export default router;

@@ -16,20 +16,29 @@ Author review:
 
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { EditorView, basicSetup } from 'codemirror';
 import { javascript } from '@codemirror/lang-javascript';
+import { cpp } from '@codemirror/lang-cpp';
+import { python } from '@codemirror/lang-python';
+
 import { yCollab } from 'y-codemirror.next';
 import { keymap } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
 import * as random from 'lib0/random';
+import { Compartment } from '@codemirror/state';
 import { useAuth } from '@/context/AuthContext';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
 
-// const COLLAB_HOST = import.meta.env.COLLAB_HOST ?? 'ws://localhost';
-// const COLLAB_PORT = import.meta.env.COLLAB_PORT ?? '8081';
-// const WEBSOCKET_ENDPOINT = `${COLLAB_HOST}:${COLLAB_PORT}`;
-const WEBSOCKET_ENDPOINT = import.meta.env.VITE_WS_ENDPOINT ?? 'ws://localhost/api/collab';
-
+const WEBSOCKET_ENDPOINT = `ws://localhost/api/collab/room`;
 
 
 export const USERCOLOURS = [
@@ -46,47 +55,160 @@ export const USERCOLOURS = [
 export const userColour = USERCOLOURS[random.uint32() % USERCOLOURS.length]
 
 interface CollaborativeEditorProps {
-  userId: string | null;
-  // Add user JWT auth token later
+  matchToken: string;
 }
 
-
-
-export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({userId })  => {
+export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ matchToken })  => {
   const editorRef = useRef<HTMLDivElement>(null);
   const ydocRef = useRef<Y.Doc>(null);
   const providerRef = useRef<WebsocketProvider>(null);
   const editorViewRef = useRef<EditorView>(null);
-  const { jwt: userAuthToken} = useAuth();
+  const editableCompartment = useRef(new Compartment());
+  const [ matchState, setMatchState ] = useState<boolean>(true);
+  const [ partnerState, setPartnerState ] = useState<boolean>(true);
+  const [ partnerLiveliness, setPartnerLiveliness ] = useState<boolean>(true);
+  const [ language, setLanguage ] = useState<"python3" | "cpp" | "javascript">("javascript");
 
-  useEffect(() => {
-    if (!userAuthToken) {
-      console.error('No user auth token available for CollaborativeEditor');
+  const { user, jwt }= useAuth();
+
+  const TIMEOUT_DELAY = 3000;
+  const timeoutRef = useRef<NodeJS.Timeout|null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'shortDisconnect' | 'connected'>('connected');
+  
+  // Added state to trigger a reconnection attempt
+  const [retryAttempt, setRetryAttempt] = useState(0);
+
+  // Added handler for the "Retry" button
+  const handleRetry = () => {
+    console.log("Attempting to reconnect...");
+    // Set status to "reconnecting" to hide the modal immediately
+    setConnectionStatus('shortDisconnect');
+    // Trigger the useEffect to re-initialize the connection
+    setRetryAttempt(prev => prev + 1);
+  };
+
+  const handleWebsocketStatusChange = ( status : "connected" | "disconnected" | "connecting") => {
+    console.log(`Status changed to ${status}`)
+    if (status == "connected" && timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      setConnectionStatus("connected");
+    }
+    if (status == "disconnected" || status == "connecting") {
+      if (connectionStatus == "shortDisconnect" || connectionStatus == "disconnected") {
+        return;
+      }
+      setConnectionStatus("shortDisconnect");
+      if (timeoutRef.current) {
+        return;
+      }
+      timeoutRef.current = setTimeout(() => {
+        console.log("Long disconnect, freezing editing")
+        setConnectionStatus('disconnected');
+      }, TIMEOUT_DELAY);
+    }
+  };
+  const handleLanguageChange = (value: "python3" | "cpp" | "javascript") => {
+    setLanguage(value);
+  };
+
+  useEffect(() => { 
+    if (!user || !jwt) {
+      console.log("No Auth token");
       return;
     }
 
+    {/* Language Linting */}
+    let languageLintExtension = javascript;
+    switch(language) {
+      case "python3": {
+        languageLintExtension = python;
+        break;
+      }
+      case "javascript": {
+        languageLintExtension = javascript;
+        break;
+      }
+      case "cpp": {
+        languageLintExtension = cpp;
+        break;
+      }
+      default: {
+        languageLintExtension = javascript;
+      }
+    }
+    
     const ydoc = new Y.Doc();
-    // Might want to extract roomID from JWT instead of using JWT as roomID
-    const provider = new WebsocketProvider(WEBSOCKET_ENDPOINT, userAuthToken, ydoc, {params: {userId: userId || 'Anonymous ' + Math.floor(Math.random() * 100), token: userAuthToken}});
+    // console.log(`Connecting to ${WEBSOCKET_ENDPOINT}/${matchToken}?userId=${user.id}?token:${jwt}`)
+    // console.log(`token: ${jwt}`)
+    const provider = new WebsocketProvider(WEBSOCKET_ENDPOINT, matchToken, ydoc, {params: {userId: user.id || 'Anonymous ' + Math.floor(Math.random() * 100), token: jwt}});
+    
     provider.ws?.addEventListener('close', event => {
       console.log('WebSocket closed:', event.code, event.reason);
+      if (event.code == 3000) { // Match ended
+        console.log("Match no longer in progress"); 
+        localStorage.removeItem("matchToken");
+        setMatchState(false);
+        provider.destroy();
+        ydoc.destroy();
+        view.destroy();
+      }
+    });
+
+    provider.ws?.addEventListener('message', (event) => {
+      if (!(typeof event.data === "string")){
+        return;
+      }
+      switch (event.data) {
+        // Partner rejoins
+        case ('partnerRejoin'): {
+          console.log('Your partner has rejoined');
+          setPartnerState(true);
+          return;
+        }
+        // Last user
+        case ('lastUser'): {
+          console.log('You are the last user');
+          setPartnerState(false);
+          return;
+        }
+        // Partner afk
+        case ('partnerAfk'): {
+          console.log('Your partner is afk');
+          setPartnerLiveliness(false);
+          return;
+        }
+        case ('partnerAlive'): {
+          console.log('Your partner is alive');
+          setPartnerLiveliness(true);
+          return;
+        }
+        default: {
+          return;
+        }
+      }
     });
     
+    provider.on('status', (event) => {
+      handleWebsocketStatusChange(event.status);
+    });
+
     provider.awareness.setLocalStateField('user', {
-      name: userId,
+      name: user.username,
       color: userColour.color,
       colorLight: userColour.light
     });
     const yText = ydoc.getText('codemirror');
+    
 
     const view = new EditorView({
       doc: yText.toString(),
       extensions: [
         keymap.of(defaultKeymap),
         basicSetup,
-        javascript(),
+        languageLintExtension(),
         EditorView.lineWrapping,
         yCollab(yText, provider.awareness),
+        editableCompartment.current.of(EditorView.editable.of(connectionStatus === 'connected'))
       ],
       parent: editorRef.current!,
     });
@@ -97,10 +219,137 @@ export const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({userId 
 
     return () => {
       provider.destroy();
+      if (!partnerState) {
+        console.log("Terminating match");
+        localStorage.removeItem("matchToken");
+      }
       ydoc.destroy();
       view.destroy();
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
-  }, [userAuthToken]);
+  }, [matchToken, language, user, jwt, retryAttempt]); 
+  
+  useEffect( () => { // Handle disconnects
+    // Dispatch readonly
+    if (editorViewRef.current && editableCompartment.current) {
+      editorViewRef.current.dispatch({
+        effects: editableCompartment.current.reconfigure(
+          EditorView.editable.of(connectionStatus != 'disconnected' && matchState)
+        )
+      });
+    }
+  }, [connectionStatus, matchState]);
 
-  return <div ref={editorRef} style={{ border: '1px solid #ccc', height: '400px' }} />;
+  {/* Status Logic */}
+  let myStatusColor = 'bg-gray-400';
+  let myStatusText = 'Unknown';
+  switch (connectionStatus) {
+    case 'connected':
+      myStatusColor = 'bg-green-600';
+      myStatusText = 'Connected';
+      break;
+    case 'shortDisconnect':
+      myStatusColor = 'bg-yellow-600';
+      myStatusText = 'Reconnecting...';
+      break;
+    case 'disconnected':
+      myStatusColor = 'bg-red-600';
+      myStatusText = 'Disconnected';
+      break;
+  }
+
+  let partnerStatusColor = 'bg-gray-400';
+  let partnerStatusText = 'Unknown';
+  if (!matchState) {
+    partnerStatusColor = 'bg-red-700';
+    partnerStatusText = 'Match Does Not Exist';
+  } else if (!partnerState) {
+    partnerStatusColor = 'bg-red-600';
+    partnerStatusText = 'Left Page';
+  } else if (partnerState && !partnerLiveliness) {
+    partnerStatusColor = 'bg-yellow-600';
+    partnerStatusText = 'AFK';
+  } else if (partnerState && partnerLiveliness) {
+    partnerStatusColor = 'bg-green-600';
+    partnerStatusText = 'Active';
+  }
+  
+  // --- Conditional Rendering ---
+  // If disconnected, show the modal. Otherwise, show the editor.
+  if (connectionStatus === 'disconnected') {
+    return (
+      <div className="flex h-[400px] w-full flex-col items-center justify-center rounded-md border border-navbar bg-navbar p-6">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-8 w-8 text-black" />
+          <h2 className="text-2xl font-semibold text-black">Connection Lost</h2>
+        </div>
+        <p className="mt-2 text-center text-black">
+          You've been disconnected from the session. Please check your internet
+          connection.
+        </p>
+        <Button
+          onClick={handleRetry}
+          variant="outline"
+          className="mt-6 text-black"
+        >
+          Retry Connection
+        </Button>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="w-full">
+      {/* Header section with controls and status */}
+      <div className="flex justify-between items-start mb-2">
+
+        {/* Left Side: Language Selector */}
+        <div className="flex-end gap-2">
+          <label
+            htmlFor="language-select"
+            className="text-sm font-medium text-gray-700"
+          >
+            Language
+          </label>
+          <Select value={language} onValueChange={handleLanguageChange}>
+            <SelectTrigger id="language-select" className="w-[180px]">
+              <SelectValue placeholder="Select language" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              <SelectItem value="python3">Python 3</SelectItem>
+              <SelectItem value="cpp">C++</SelectItem>
+              <SelectItem value="javascript">Javascript</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Right Side: Status Messages */}
+        <div className="text-right text-sm space-y-1.5">
+          {/* My Status Row */}
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-sm font-medium text-gray-700">You:</span>
+            <span className={`w-3 h-3 rounded-full ${myStatusColor}`}></span>
+            <span className="text-sm text-gray-900">({myStatusText})</span>
+          </div>
+          {/* Partner Status Row */}
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-sm font-medium text-gray-700">Partner:</span>
+            <span className={`w-3 h-3 rounded-full ${partnerStatusColor}`}></span>
+            <span className="text-sm text-gray-900">({partnerStatusText})</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Editor */}
+      {/* Added opacity transition for the "shortDisconnect" state */}
+      <div 
+        ref={editorRef} 
+        className={`border border-[#ccc] h-[400px] rounded-md transition-opacity ${
+          connectionStatus === 'shortDisconnect' ? 'opacity-60' : 'opacity-100'
+        }`}
+      />
+    </div>
+  )
 };

@@ -14,7 +14,7 @@ How to setup a service that uses redis, bullmq and bullboard while dockerizing i
 - Generated sample server.js file to check if the project can setup correctly.
 
 # Action Taken:
-- [] Accepted as-is 
+- [ ] Accepted as-is 
 - [X] Modified
 - [ ] Rejected
 # Author Notes:
@@ -25,7 +25,7 @@ How to setup a service that uses redis, bullmq and bullboard while dockerizing i
 # Date / Time:
 2025-9-28 22:00
 # Tool:
-ChatGPT 5 
+ChatGPT 5 / Gemini 2.5 Flash
 # Prompt/Command:
 How do I implement Server Side Events such that each user is notified on the events emitted by BullMQ?
 
@@ -34,12 +34,12 @@ How do I implement Server Side Events such that each user is notified on the eve
 - Sample code on how to create Server Side Events on both client and server
 
 # Action Taken:
-- [] Accepted as-is 
+- [ ] Accepted as-is 
 - [X] Modified
 - [ ] Rejected
 # Author Notes:
 - Modified the tracking of a Server Side Event connection with user by adding jobId associated with user in queue
-- Proceeded with the suggestion of a class creation called SSEClientConnection with some modifications
+- Proceeded with the suggestion of a class creation called SSEClientConnection. Copied the backbone of the class declaration but with some modifications
 
 # Date / Time:
 2025-9-29 15:30
@@ -52,7 +52,7 @@ How does the server side handle accept match? I need 2 users to accept the match
 Provided the flow on how should be done with suggested code.
 
 # Action Taken:
-- [] Accepted as-is 
+- [ ] Accepted as-is 
 - [X] Modified
 - [ ] Rejected
 # Author Notes:
@@ -87,7 +87,7 @@ Advise on how i should be breaking up this code into files. (Provided the entire
 Recommended File Structure
 
 # Action Taken:
-- [] Accepted as-is 
+- [ ] Accepted as-is 
 - [X] Modified
 - [ ] Rejected
 # Author Notes:
@@ -104,7 +104,7 @@ Currently the match page logic is all here in one file (Copied and pasted code o
 Recommended files to create and how should the logic be separated. Also provided some backbone code.
 
 # Action Taken:
-- [] Accepted as-is 
+- [ ] Accepted as-is 
 - [X] Modified
 - [ ] Rejected
 # Author Notes:
@@ -122,7 +122,7 @@ Recommended UI for the button creation.
 
 # Action Taken:
 - [X] Accepted as-is 
-- [] Modified
+- [ ] Modified
 - [ ] Rejected
 # Author Notes:
 Copied the UI into QueueDisplayTime.tsx and works.
@@ -132,14 +132,102 @@ Copied the UI into QueueDisplayTime.tsx and works.
 # Tool:
 ChatGPT 5 
 # Prompt/Command:
-Recheck after lock failure implementation for processJob function.
+- Bug arises for worker processing job as there is race condition. Asked for suggestion on how to deal with race condition.
+- After lock failure implementation for processJob function, error occurs. Asked to debug.
 
 # Output Summary:
-Code adjustments to current processJob function.
+- Followed the recommendation of using redlock.
+- Copy and paseted the code adjustments suggestion to current processJob function.
 
 # Action Taken:
 - [X] Accepted as-is 
-- [] Modified
+- [ ] Modified
 - [ ] Rejected
 # Author Notes:
 Tested and works.
+
+# Date / Time:
+2025-10-26/27
+# Tool:
+ChatGPT 5 / Claude Sonnet 4.5 / Gemini 2.5 Flash 
+# Prompt/Command:
+Asked how to synchronize multiple tabs of the same browser to show the same matching page.
+
+# Output Summary:
+Code adjustments to MatchContext.tsx file
+
+# Action Taken:
+- [X] Accepted as-is 
+- [ ] Modified
+- [ ] Rejected
+# Author Notes:
+Went through many iterations of back and forth asking how to implement and along the way, realised that some edits suggested were the reasons of the bugs spotted. Finally, Claude gave the implementation that tackled the bugs and problems I highlighted.
+
+# Date / Time:
+2025-10-30
+# Tool:
+ChatGPT 5
+# Prompt/Command:
+Asked if the error on removing job is because of processJob function holding onto redis lock.
+
+# Output Summary:
+Replied yes and suggested ways to overcome the problem
+
+# Action Taken:
+- [ ] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+# Author Notes:
+Went through the suggested solutions and chose a simple approach to tackle the problem that doesn't result in locking errors.
+
+# Date / Time:
+2025-10-30
+# Tool:
+ChatGPT 5
+# Prompt/Command:
+Copy pasted code that is suspected to load the state of Match Page wrongly as still preserves the status of the page after logging out and logging in
+
+# Output Summary:
+Replied with a few variations.
+
+# Action Taken:
+- [X] Accepted as-is 
+- [ ] Modified
+- [ ] Rejected
+# Author Notes:
+Went through the suggested solutions and chose the solution that fits the logic of what I want. Tested and works.
+
+# Date / Time:
+2025-11-1
+# Tool:
+ChatGPT 5
+# Prompt/Command:
+This is my current matching criteria. I want to evolve it to weighted matching. Please create a separate function for this filtering called executeMatchingAlgorithm. I want to check if job.attemptsMade > 3 (so the last 3 attempts), we will do weighted matching (topic should aim to be the same but difficulty can differ slightly). else, the first 3 attempts should always be an exact match.
+
+# Output Summary:
+Replied with a few variations.
+
+# Action Taken:
+- [ ] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+# Author Notes:
+Read through the suggested solution and made few minor modifications of logic.
+
+# Date / Time:
+2025-11-1
+# Tool:
+ChatGPT 5
+# Prompt/Command:
+- If both browsers calls this API (referring to the API that establishes the SSE connection), will there be any race condition and still allow both connections?
+- The lock still allows same user to establish connection in both browsers, why?
+
+# Output Summary:
+Yes with explanation why. Also, proposed the usage of a lock to prevent allowing the same user to establish connection in both browswers.
+
+# Action Taken:
+- [X] Accepted as-is 
+- [ ] Modified
+- [ ] Rejected
+# Author Notes:
+Read through the suggested solution and copied code that prevents bug. Tested and works.

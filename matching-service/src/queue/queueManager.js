@@ -1,3 +1,19 @@
+/*
+AI Assistance Disclosure:
+Tool: Gemini 2.5 Flash date: 2025-10-12 18:00
+Tool: ChatGPT 5 date: 2025-10-15 10:00 / 2025-10-30 / 2025-11-1
+Scope: 
+- Advise on how I should be refactoring code in server.js to other files for readability and maintainability.
+- Advise on how to check if the connection of the queue/worker/queueEvents created are ready.
+- Advise on how to prevent potential race condition
+- Modification of matching criteria to adopt weighted average calculation
+Author review: 
+- Followed recommended file structure and refactor code to prevent any circular imports
+- Followed and copied test code provided
+- Followed suggestion of using redis lock on critical section, copy and pasted code to debug when redis lock used
+- Followed suggestion on matching criteria modificaiton
+*/
+
 const { Queue, Worker, QueueEvents } = require("bullmq");
 const { redisDB, redisOptions } = require('../config/redis');
 const { handleTentativeMatch } = require('../match/matchHandler');
@@ -5,6 +21,7 @@ const { handleDisconnect } = require('../sse/disconnectHandler');
 const { SSEClientConnections } = require('../sse/SSEClientConnection');
 const RedlockModule = require("redlock");
 const Redlock = RedlockModule.default; 
+const { executeMatchingAlgorithm } = require('./matchCriteria');
 
 const redisConnectionOption = {
     connection: { ...redisOptions }
@@ -59,23 +76,22 @@ async function sleep(ms) {
 const processJob = async (jobInProcess) => {
     console.log(`Job ${jobInProcess.id} in process.`);
 
+    if (jobInProcess.data.cancelled) return "Remove Job";
+
     if (jobInProcess.data.isMatched) return "Match found";
 
     for (let attempt = 1; attempt <= MAX_RECHECK_ATTEMPTS; attempt++) {
         const delayedJobs = await matchingQueue.getDelayed();
         const waitingJobs = await matchingQueue.getWaiting();
         const allJobsInQueue = [...delayedJobs, ...waitingJobs];
-        const compatibleJobs = allJobsInQueue.filter(job =>
-            job.data.topic === jobInProcess.data.topic &&
-            job.data.difficulty === jobInProcess.data.difficulty
-        );
+        const compatibleJobs = executeMatchingAlgorithm(allJobsInQueue, jobInProcess);
 
         if (compatibleJobs.length === 0) {
             console.log(`Attempt ${attempt}: No compatible jobs found.`);
         } else {
             const compatibleJob = compatibleJobs.reduce((a, b) => a.timestamp < b.timestamp ? a : b);
             const lockKey = `lock:job:${compatibleJob.id}`;
-
+            
             try {
                 // try acquiring lock for this compatible job
                 await redlock.using([lockKey], 2000, async () => {
@@ -101,6 +117,7 @@ const processJob = async (jobInProcess) => {
 
                     await jobInProcess.updateData({
                         ...jobInProcess.data,
+                        matchId: `${compatibleJob.data.userId}-${jobInProcess.data.userId}`,
                         isMatched: true,
                         matchedUserId: compatibleJob.data.userId
                     });
@@ -155,8 +172,13 @@ matchingQueueEvents.on("completed", async ({ jobId }) => {
     const job = await matchingQueue.getJob(jobId);
 
     if (job) {
-        console.log(`Job ${job.id} completed.`, job.data);
-        await handleTentativeMatch(job.data, matchingQueue);
+        if (job.data.cancelled) {
+            console.log('Removing cancelled job', jobId)
+            await job.remove();
+        } else {
+            console.log(`Job ${jobId} completed.`, job.data);
+            await handleTentativeMatch(job.data, matchingQueue);
+        }
     } else {
         console.log(`Job with ID ${jobId} not found.`);
     }
@@ -173,7 +195,7 @@ matchingQueueEvents.on("failed", async ({ failedReason, jobId }) => {
             const SSEClientConnection = SSEClientConnections.get(job.data.userId);
             if (SSEClientConnection) {
                 SSEClientConnection.send("matchFailed", { message: "Unable to find a match, please try again!" });
-                handleDisconnect(job.data.userId, matchingQueue);
+                await handleDisconnect(job.data.userId, matchingQueue);
                 SSEClientConnection.close();
             }
         } else {
