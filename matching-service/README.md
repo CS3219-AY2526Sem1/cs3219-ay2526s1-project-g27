@@ -95,6 +95,8 @@ Broad Overview of Algorithm:
 4. User can accept/reject match.  
 5. `matchSuccess`, `matchFailute` or `requeue` events are emitted accordingly.  
 
+_Note: In the event that the worker fails to match the job, the job joins back the queue for processing after a short delay. This is considered 1 attempt made by worker._
+
 ---
 
 ## Edge Cases
