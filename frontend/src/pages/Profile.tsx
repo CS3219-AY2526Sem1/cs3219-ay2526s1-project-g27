@@ -41,7 +41,7 @@ interface EditableProfileData {
 }
 
 const ProfilePage: FC = () => {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading, jwt } = useAuth(); // Destructure isLoading from auth
 
   // --- State Management ---
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -88,7 +88,7 @@ const ProfilePage: FC = () => {
 
   // Main effect to fetch all necessary data
   useEffect(() => {
-    if (user?.id) {
+    if (!isAuthLoading && user?.id && jwt) {
       // Fetch the main user profile
       fetchProfile(user.id);
 
@@ -102,8 +102,7 @@ const ProfilePage: FC = () => {
           // You could set a separate error state for attempts if needed
         });
     }
-  }, [user?.id, fetchProfile]);
-
+  }, [user?.id, isAuthLoading, jwt, fetchProfile]);
   // --- Event Handlers ---
 
   const handleEditToggle = () => {
@@ -164,7 +163,7 @@ const ProfilePage: FC = () => {
 
   // --- Render Logic ---
 
-  if (status === 'loading') {
+  if (status === 'loading' || isAuthLoading) {
     return <ProfilePageSkeleton />;
   }
 
