@@ -864,98 +864,6 @@ docker-compose build --no-cache nginx-gateway
 
 ---
 
-### Database Management
-
-#### MongoDB Operations
-
-```bash
-# Access MongoDB shell
-docker-compose exec mongo mongosh
-
-# In mongosh:
-> use PeerPrepAuthDB
-> db.users.find().pretty()
-> db.questions.count()
-
-# Backup database
-docker-compose exec mongo mongodump --out /backup
-
-# Restore database
-docker-compose exec mongo mongorestore /backup
-```
-
-#### Clear MongoDB Data
-
-```bash
-# Remove mongo-data volume (deletes all data)
-docker-compose down -v
-
-# Or keep containers but flush database
-docker-compose exec mongo mongosh --eval "db.dropDatabase()"
-```
-
----
-
-### Performance Optimization
-
-#### 1. Reduce Image Size
-
-```bash
-# Check image sizes
-docker images
-
-# Output:
-# peerprep_nginx-gateway        latest    40MB
-# peerprep_auth-service         latest    180MB  (can optimize)
-```
-
-**Optimization for auth-service**:
-```dockerfile
-# Current: node:22-alpine
-# Reduce to:
-FROM node:22-alpine
-
-# Multi-stage build
-FROM node:22-alpine AS builder
-RUN npm install --production
-
-FROM node:22-alpine
-COPY --from=builder /app/node_modules ./node_modules
-COPY . .
-CMD ["npm", "start"]
-```
-
-#### 2. Improve Build Speed
-
-```bash
-# Use Docker BuildKit for better caching
-DOCKER_BUILDKIT=1 docker-compose build
-
-# Parallelize builds
-docker-compose build --parallel
-```
-
-#### 3. Monitor Resource Usage
-
-```bash
-# See CPU/memory usage
-docker stats
-
-# Limit resources in docker-compose.yml
-services:
-  auth-service:
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-```
-
----
-
 ### Troubleshooting
 
 #### Service fails to start
@@ -989,7 +897,6 @@ docker-compose exec auth-service route
 docker network inspect $(docker-compose ps -q auth-service)
 ```
 
-
 ---
 
 ## Conclusion
@@ -997,9 +904,8 @@ docker network inspect $(docker-compose ps -q auth-service)
 PeerPrep's containerized microservices architecture provides:
 
 1. **Modularity**: Independent service deployment and scaling
-2. **Resilience**: Container restarts, health checks, job queues
+2. **Resilience**: Container restarts, job queues
 3. **Developer Experience**: Easy debugging, single command startup
-4. **Production Ready**: Multi-stage builds, non-root users, Kubernetes support
 5. **Real-Time Features**: WebSocket infrastructure for collaboration and chat
 
 The combination of Docker for development and Kubernetes for production ensures consistency across environments while maintaining the flexibility to scale individual components based on demand.
