@@ -42,7 +42,7 @@ The frontend communicates with backend services via a proxy at `/api`.
 | Get Question Attempts | `GET` | `/questions/question/attempt/{userId}` | `QuestionAttempt[]` |
 | Start Queue | `POST` | `/matching/queue` | User added to queue |
 | Leave Queue | `DELETE` | `/matching/queue/{userId}` | User removed from queue |
-| Accept Match | `POST` | `/matching/matches` | Match accepted |
+| Accept Match | `PUT` | `/matching/matches/{matchId}` | Match accepted |
 | Check Match Status | `GET` | `/collab/match/status/{matchToken}` | `{ status: 'in_match' \| 'no_match' }` |
 | Get Random Question | `POST` | `/questions/question/random` | `{ id, title, description, ... }` |
 
