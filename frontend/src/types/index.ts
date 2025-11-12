@@ -16,7 +16,6 @@ export interface UserProfile {
   userId: string;
   username?: string;
   handles: string[];
-  currentRating: number;
   problemsSolved: SolvedProblem[];
   biography: string;
   createdAt: string;

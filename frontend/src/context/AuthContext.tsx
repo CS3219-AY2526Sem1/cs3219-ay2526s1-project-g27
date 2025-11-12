@@ -1,3 +1,15 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5), Gemini 2.5 Pro
+Scope: 
+- Generated Initial boiler plate
+- Iterative improvement as auth changes , used documentation alogn with prompts
+- Debugging 
+Author review: 
+- Verfied for correctness by reading code
+- Tested using local 
+*/
+
 import { createContext, useContext, useState, useEffect, type ReactNode, type FC } from 'react';
 import type { User, AuthContextType } from '@/types';
 import { authClient } from '@/lib/auth-client'; 
@@ -46,13 +58,11 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      console.log('🔑 Fetching JWT token using authClient.token()...');
       
-      // CORRECT WAY: Use the token() method from jwtClient plugin
       const { data, error } = await authClient.token();
       
       if (error) {
-        console.error('❌ Error fetching JWT token:', error);
+        console.error('Error fetching JWT token:', error);
         setJwt(null);
         setAuthToken(null);
         return;

@@ -1,3 +1,11 @@
+/*
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# - Initial type template 
+# Author review: 
+# - MongoDB compass  
+*/
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 
@@ -8,7 +16,6 @@ export type User = {
   emailVerified: boolean;
   createdAt: Date; 
   updatedAt: Date;
-  currentRating: number;
 };
 
 export const UserSchema = z.object({
@@ -17,7 +24,6 @@ export const UserSchema = z.object({
   emailVerified: z.boolean(),
   createdAt: z.date(),
   updatedAt: z.date(),
-  currentRating: z.number().int()
 });
 
 type UserData = z.infer<typeof UserSchema>
@@ -34,7 +40,6 @@ export const solvedProblemSchema = z.object({
 export const profileSchema = z.object({
   userId: z.string(), 
   handles: z.array(z.string()).default([]),
-  currentRating: z.number().int(),
   problemsSolved: z.array(solvedProblemSchema).default([]),
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),

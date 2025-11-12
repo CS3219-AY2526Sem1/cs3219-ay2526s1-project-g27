@@ -16,7 +16,6 @@ import {
 
 const router = express.Router();
 
-// ✅ Specific routes first
 router.post("/random", getRandomQuestion);
 router.get("/all", getAllQuestions);
 router.get("/attempt/:UserId", findUserAttempts);
@@ -24,7 +23,6 @@ router.post("/attempt", addUserAttempt);
 router.get("/attempt/all", getAllAttempts);
 router.delete("/attempt/all", deleteAllAttempts);
 
-// ✅ Dynamic routes last
 router.post("/", createNewQuestion);
 router.put("/:id", updateQuestion);
 router.delete("/:id", deleteQuestion);

@@ -1,7 +1,13 @@
-// chat widget with yjs 
-// include user id
-// align self messages to the right
-// make it scroll down when a new message arrives
+/* AI Assistance Disclosure:
+ Tool: ChatGPT (model: GPT‑5) date: 2025‑11‑07
+Scope: 
+- Create chat widget
+- Include user id in chat widget
+- Align messsages by client to right of widget
+- Make the widget scroll when new message arrives
+Author review: 
+- Verified for correctness by reading code
+*/
 
 import React, { useEffect, useState, useRef } from 'react';
 import * as Y from 'yjs';

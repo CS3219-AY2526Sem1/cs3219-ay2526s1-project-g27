@@ -1,3 +1,12 @@
+/*
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5), Claude 4.5 Sonnet 
+# Scope: 
+# - Boiler plate code, types 
+# Author review: 
+# - Verify through running 
+# - Read the code 
+*/
 import express from "express";
 import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
@@ -73,13 +82,13 @@ async function startServer() {
 }
 
 process.on("SIGINT", async () => {
-  console.log("\n🛑 Shutting down gracefully...");
+  console.log("\nShutting down gracefully...");
   await closeDatabase();
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
-  console.log("\n🛑 Shutting down gracefully...");
+  console.log("\nShutting down gracefully...");
   await closeDatabase();
   process.exit(0);
 });

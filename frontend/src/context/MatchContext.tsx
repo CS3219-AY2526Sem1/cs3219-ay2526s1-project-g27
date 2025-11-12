@@ -1,3 +1,17 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT 5 date: 2025-10-13 12:30
+Tool: ChatGPT 5 / Claude Sonnet 4.5 / Gemini 2.5 Flash  date: 2025-10-26/27/30
+Scope: 
+- Ensure Match Persistence state across the entire application
+- Synchronization of multiple tabs of the same browser to show the same matching page to resolve bug 
+that opening another tab allows user to enter the queue.
+Author review: 
+- Followed the guideline of how the original matching page logic should be separated with an overarching context.
+- Copied and pasted the recommended debugging code for multiple tab synchronization.
+- Verfied for correctness by testing and works.
+*/
+
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import apiClient from "@/api/apiClient";        
 import { useAuth } from "@/context/AuthContext";
@@ -583,7 +597,7 @@ export function MatchingProvider({ children }: { children: React.ReactNode }) {
     const acceptMatch = () => {
         if (!userId || !matchId) return;
 
-        apiClient.post(`/matching/matches`, { userId, matchId })
+        apiClient.put(`/matching/matches/${matchId}`, { userId })
             .then(() => {
                 console.log('Match accepted');
             })

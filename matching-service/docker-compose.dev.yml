@@ -1,3 +1,13 @@
+# AI Assistance Disclosure:
+# Tool: ChatGPT (model: GPT‑5) date: 2025-9-21
+# Scope: 
+# - Generated docker compose file code
+# Author review: 
+# - Modified the namings 
+# - Refactor the environemnt variables into a separate file
+# - Edited inputs such that it can be launched
+# - Remove persistence of data storage in redis
+
 version: "3.8"
 services:
   matching-service:

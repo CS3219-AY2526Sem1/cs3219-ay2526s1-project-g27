@@ -1,4 +1,10 @@
-// use yjs to create a chat backend server
+/* AI Assistance Disclosure:
+ Tool: ChatGPT (model: GPT‑5) date: 2025‑11‑07
+Scope: 
+- Create boilerplate code
+Author review: 
+- Verified for correctness by reading code
+*/
 
 import express from "express";
 import http from "http";

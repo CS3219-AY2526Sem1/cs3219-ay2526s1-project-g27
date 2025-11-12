@@ -1,3 +1,14 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (model: GPT‑5)
+Scope: 
+- Boilerplate code generation 
+Author review: 
+- Verfied for correctness by reading code
+- Verified as working through page display 
+*/
+
+
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button'; 
 
