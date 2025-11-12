@@ -84,9 +84,8 @@ For the Resend part, i adapted it from the idea of a youtube video featuring res
 Gemini Pro 2.5
 
 # Prompt / Command / Description:
-Asked about how we could prevent the need for revalidation by every service to verify that a json web token is valid and possed about a user.
-Then decide to accept a gateway approach. 
-Ask Gemini to generate code for such a gateway using express and docker.
+Decide that we need a API gateway to proxy request to auth service  verify that a json web token is valid and possed about a user.
+Ask Gemini to generate code for such a gateway using express and docker configuration file given.
 
 
 
@@ -96,50 +95,6 @@ Ask Gemini to generate code for such a gateway using express and docker.
 - [ ] Rejected
 
 # Author Notes:
-+--------------------------------------------------------------------------------------------------+
-|                                    Phase 1: Authentication                                       |
-|                                                                                                  |
-| +------------+         (1) Login with credentials         +--------------------------+           |
-| |   Client   | -----------------------------------------> |                          |           |
-| | (Browser)  |                                            |   Auth / User Service    |           |
-| +------------+         (2) Returns signed JWT             |   (Backend Microservice) |           |
-|       ^      | <----------------------------------------- |                          |           |
-|       |      |                                            +--------------------------+           |
-|       |      +-----------------------------------------------------------------------------------+
-|       |
-|  (Holds JWT for                                     +------------------------------------------+
-|  subsequent calls)                                  |               (One-time setup)           |
-|                                                     |                                          |
-|                                                     | (A) Gateway fetches public keys (JWKS)   |
-|                                                     |     and caches them.                     |
-|                                                     |                                          |
-+-----------------------------------------------------+------------------------------------------+
-|
-|
-+--------------------------------------------------------------------------------------------------+
-|                                  Phase 2: Authenticated API Calls                                |
-|                                                                                                  |
-| +------------+       (3) Request with JWT                  +--------------------------+          |
-| |   Client   | ------------------------------------------> |                          |          |
-| | (Browser)  |       to /api/questions                     |      API Gateway         |          |
-| +------------+                                             |                          |          |
-|       ^      |       (6) Gateway returns response          | (Validates JWT w/        |          |
-|       |      | <-----------------------------------------  |  *cached* public key)    |          |
-|       |      |                                             +------------+-------------+          |
-|       |      |                                                          | (4) If JWT is valid,   |
-|       +------+                                                          |     forward request    |
-|                                                                         v                        |
-|                                                            +--------------------------+          |
-|                                                            |                          |          |
-|                                                            |    Internal Microservices|          |
-|                                                            |    (e.g., Question Svc)  |          |
-|                                                            |                          |          |
-|                                                            |      (5) Service sends   |          |
-|                                                            |          response back   |          |
-|                                                            |                          |          |
-|                                                            +--------------------------+          |
-|                                                                                                  |
-+--------------------------------------------------------------------------------------------------+
 
 
 
@@ -249,18 +204,17 @@ Gemini Pro 2.5
 # Prompt / Command / Description:
 Asked about how we could prevent the need for revalidation by every service to verify that a json web token is valid and possed about a user.
 Then decide to accept a gateway approach. 
-Ask Gemini to generate code for such a gateway using express and docker for nginx.  
+Ask Gemini to generate code for such a gateway using express and docker.
 
 
 
 # Action Taken:
 - [] Accepted as-is 
-- [X] Modified
-- [ ] Rejected
+- [] Modified
+- [X] Rejected
 
 # Author Notes:
-Modified Nginx proxy pass api endpoints to tailor to different microservice setup
-
+The overall Gateway was buggy and full of errors like dealing with headers and CORS issue. Choose NGINX which is a more commonly use open source solution.
 
 
 # Date / Time:
@@ -279,6 +233,23 @@ Asked for Ngnix configuration instead since gateway showing alot of problems, it
 # Author Notes:
 Modifying it to tailor to our own service and settings. This include adding to SSE and adding authorization headers.
 Decided to also host react on the ngnix and serve it instead of separating out.
+
+# Date / Time
+10-10-2025
+# Tool:
+Gemini Pro 2.5 and Claude Sonnet 4.5
+
+# Prompt / Command / Description:
+Given the Better Auth Documentation, how can i set up JSON Web Token for verification.
+
+
+# Action Taken:
+- [] Accepted as-is 
+- [X] Modified
+- [ ] Rejected
+
+# Author Notes:
+Make route amendments and ensure that the proxy in NGINX matches 
 
 
 # Date / Time
@@ -351,20 +322,7 @@ Given the nginx config and docker-compose, write me the kubernetes config files 
 
 # Author Notes:
 Modified to use own files, changed some settings like memory etc
+REMOVED from use. Decide to not pursue this NTH
 
 
-# Date / Time
-9-11-2025
-# Tool:
-Gemini Pro 2.5 and Claude Sonnet 4.5
 
-# Prompt / Command / Description:
-Change the API endpoints based on the DB schema change myself
-
-# Action Taken:
-- [] Accepted as-is 
-- [X] Modified
-- [ ] Rejected
-
-# Author Notes:
-Modified to use own DB and types.
